@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Detalhes do Carro - Garagem Interativa</title>
+</head>
+<body>
+    <main>
+        <!-- 1. Menu de Navegação -->
+        <nav class="main-nav">
+            <ul>
+                <li><a href="index.html">Página Inicial</a></li>
+                <!-- Marcamos este link como ativo -->
+                <li><a href="detalhes_carro.html" class="active">Carro</a></li>
+                <li><a href="detalhes_esportivo.html">Carro Esportivo</a></li>
+                <li><a href="detalhes_caminhao.html">Caminhão</a></li>
+                <li><a href="detalhes_moto.html">Moto</a></li>
+            </ul>
+        </nav>
+        
+        <h1>Detalhes do Carro</h1>
+
+        <!-- 2. Seção do Carro (copiada do index.html original) -->
+        <section class="container">
+            <h2>Carro</h2>
+            <div id="carro-container">
+                <img id="carro-imagem" src="imagens/civic-removebg-preview.png" alt="Imagem do Carro">
+                <p id="carro-status">Desligado</p>
+                <div class="painel-velocidade">
+                    <div class="barra-velocidade">
+                        <div class="ponteiro" id="ponteiro-velocidade"></div>
+                    </div>
+                    <div class="velocidade-display" id="velocidade-valor">0 km/h</div>
+                    <div class="animacao-aceleracao" id="animacao-aceleracao-carro"></div>
+                    <div class="animacao-freagem" id="animacao-freagem-carro"></div>
+                </div>
+                <p id="carro-detalhes">Modelo: <span id="modelo"></span>, Cor: <span id="cor"></span></p>
+            </div>
+            <div>
+                <input type="text" id="modeloCarro" placeholder="Modelo">
+                <input type="text" id="corCarro" placeholder="Cor">
+                <button onclick="garagem.criarCarro()">Criar/Atualizar Carro</button>
+            </div>
+            <div id="botoes-meuCarro" class="botoes">
+                <button onclick="garagem.interagirComVeiculo('meuCarro', 'ligar')" id="ligar-btn">Ligar</button>
+                <button onclick="garagem.interagirComVeiculo('meuCarro', 'desligar')" id="desligar-btn">Desligar</button>
+                <button onclick="garagem.interagirComVeiculo('meuCarro', 'acelerar')" id="acelerar-btn">Acelerar</button>
+                <button onclick="garagem.interagirComVeiculo('meuCarro', 'frear')" id="frear-btn">Frear</button>
+                <br>
+                <input type="text" id="corPintura" placeholder="Nova Cor">
+                <button onclick="garagem.pintarVeiculo('meuCarro')" id="pintar-btn">Pintar</button>
+                <input type="number" id="combustivel" placeholder="Add Combustível (%)" min="0" max="100">
+                <button onclick="garagem.abastecerVeiculo('meuCarro')" id="abastecer-btn">Abastecer</button>
+            </div>
+            <div class="botoes-api">
+                <button class="btn-detalhes-extras" data-veiculo-id="meuCarro">Ver Detalhes Extras (API)</button>
+            </div>
+            <div id="detalhes-extras-meuCarro" class="detalhes-extras-container" style="display: none;"></div>
+            <div class="manutencao-forms-container">
+                <div class="manutencao-form">
+                    <h4>Registrar Manutenção Realizada</h4>
+                    <input type="date" id="dataManutencaoCarro" title="Data da Manutenção">
+                    <input type="text" id="tipoManutencaoCarro" placeholder="Tipo de Serviço">
+                    <input type="number" id="custoManutencaoCarro" placeholder="Custo (R$)" min="0" step="0.01">
+                    <input type="text" id="descManutencaoCarro" placeholder="Descrição (Opcional)">
+                    <button onclick="garagem.registrarManutencao('meuCarro')">Registrar Concluída</button>
+                </div>
+                <div class="manutencao-form">
+                    <h4>Agendar Manutenção Futura</h4>
+                    <input type="date" id="dataAgendamentoCarro" title="Data do Agendamento">
+                    <input type="time" id="horaAgendamentoCarro" title="Hora do Agendamento (Opcional)">
+                    <input type="text" id="tipoAgendamentoCarro" placeholder="Tipo de Serviço">
+                    <input type="text" id="obsAgendamentoCarro" placeholder="Observações (Opcional)">
+                    <button onclick="garagem.agendarManutencao('meuCarro')">Agendar</button>
+                </div>
+            </div>
+        </section>
+
+        <hr>
+
+        <section class="container">
+            <h2>Informações e Histórico do Veículo</h2>
+            <div id="informacoesVeiculo">Carregando informações do carro...</div>
+        </section>
+        <!-- NOVO: Seção para Manutenções do Banco de Dados (Adicionar em todos os detalhes_*.html) -->
+        <hr>
+
+        <section id="secao-manutencao-db" class="container" style="display: none;">
+            <h2>Histórico de Manutenções (Banco de Dados)</h2>
+            <p>Registre e visualize o histórico de serviços realizados neste veículo.</p>
+            
+            <!-- Formulário para adicionar nova manutenção -->
+            <form id="form-add-manutencao" class="manutencao-form" style="max-width: 600px; margin: 20px auto;">
+                <h4>Adicionar Nova Manutenção</h4>
+                <input type="text" id="input-manutencao-descricao" placeholder="Descrição do Serviço (Ex: Troca de óleo)" required>
+                <input type="number" id="input-manutencao-custo" placeholder="Custo (R$)" min="0" step="0.01" required>
+                <input type="number" id="input-manutencao-km" placeholder="Quilometragem (Opcional)" min="0">
+                <button type="submit">Adicionar Manutenção</button>
+            </form>
+
+            <!-- Lista onde as manutenções serão exibidas -->
+            <div class="lista-manutencoes-container">
+                <h4>Registros Anteriores:</h4>
+                <ul id="lista-manutencoes">
+                    <!-- O JavaScript irá popular esta lista -->
+                </ul>
+            </div>
+        </section>
+    </main>
+
+    <!-- 3. Scripts (EXATAMENTE OS MESMOS e na mesma ordem) -->
+    <script src="js/manutencao.js"></script>
+    <script src="js/veiculo.js"></script>
+    <script src="js/carro.js"></script>
+    <script src="js/carroEsportivo.js"></script>
+    <script src="js/caminhao.js"></script>
+    <script src="js/moto.js"></script>
+    <script src="js/garagem.js"></script>
+    <script src="js/main_detalhes.js"></script> <!-- ATENÇÃO: Usaremos um script de inicialização diferente -->
+
+</body>
+</html>

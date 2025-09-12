@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Detalhes do Caminhão - Garagem Interativa</title>
+</head>
+<body>
+    <main>
+        <!-- Menu de Navegação -->
+        <nav class="main-nav">
+            <ul>
+                <li><a href="index.html">Página Inicial</a></li>
+                <li><a href="detalhes_carro.html">Carro</a></li>
+                <li><a href="detalhes_esportivo.html">Carro Esportivo</a></li>
+                <li><a href="detalhes_caminhao.html" class="active">Caminhão</a></li>
+                <li><a href="detalhes_moto.html">Moto</a></li>
+            </ul>
+        </nav>
+        
+        <h1>Detalhes do Caminhão</h1>
+
+        <!-- Seção do Caminhão -->
+        <section class="container">
+            <h2>Caminhão</h2>
+            <div id="caminhao-container">
+                <img id="caminhao-imagem" src="imagens/caminhão-removebg-preview.png" alt="Imagem do Caminhão">
+                <p id="caminhao-status">Desligado</p>
+                <div class="painel-velocidade">
+                    <div class="barra-velocidade">
+                        <div class="ponteiro" id="ponteiro-caminhao-velocidade"></div>
+                    </div>
+                    <div class="velocidade-display" id="caminhao-velocidade-valor">0 km/h</div>
+                    <div class="animacao-aceleracao" id="animacao-aceleracao-caminhao"></div>
+                    <div class="animacao-freagem" id="animacao-freagem-caminhao"></div>
+                </div>
+                <p id="caminhao-detalhes">Modelo: <span id="caminhao-modelo"></span>, Cor: <span id="caminhao-cor"></span></p>
+                 <p id="infoCaminhao"></p>
+            </div>
+             <div>
+                 <input type="text" id="modeloCaminhao" placeholder="Modelo">
+                 <input type="text" id="corCaminhao" placeholder="Cor">
+                 <input type="number" id="capacidadeCarga" placeholder="Capacidade (kg)" min="0">
+                 <button onclick="garagem.criarCaminhao()">Criar/Atualizar Caminhão</button>
+            </div>
+            <div id="botoes-caminhao" class="botoes">
+                <button onclick="garagem.interagirComVeiculo('caminhao', 'ligar')" id="ligar-caminhao-btn">Ligar</button>
+                <button onclick="garagem.interagirComVeiculo('caminhao', 'desligar')" id="desligar-caminhao-btn">Desligar</button>
+                <button onclick="garagem.interagirComVeiculo('caminhao', 'acelerar')" id="acelerar-caminhao-btn">Acelerar</button>
+                <button onclick="garagem.interagirComVeiculo('caminhao', 'frear')" id="frear-caminhao-btn">Frear</button>
+                <br>
+                <input type="number" id="pesoCarga" placeholder="Peso Carga (kg)" min="0">
+                <button onclick="garagem.interagirComVeiculo('caminhao', 'carregar')">Carregar</button>
+                <input type="number" id="pesoDescarga" placeholder="Peso Descarga (kg)" min="0">
+                <button onclick="garagem.interagirComVeiculo('caminhao', 'descarregar')">Descarregar</button>
+                <br>
+                <input type="text" id="corPinturaCaminhao" placeholder="Nova Cor">
+                <button onclick="garagem.pintarVeiculo('caminhao')" id="pintar-caminhao-btn">Pintar</button>
+                <input type="number" id="combustivelCaminhao" placeholder="Add Combustível (%)" min="0" max="100">
+                <button onclick="garagem.abastecerVeiculo('caminhao')" id="abastecer-caminhao-btn">Abastecer</button>
+            </div>
+            <div class="botoes-api">
+                <button class="btn-detalhes-extras" data-veiculo-id="caminhao">Ver Detalhes Extras (API)</button>
+            </div>
+            <div id="detalhes-extras-caminhao" class="detalhes-extras-container" style="display: none;"></div>
+            <div class="manutencao-forms-container">
+                <div class="manutencao-form">
+                    <h4>Registrar Manutenção Realizada</h4>
+                    <input type="date" id="dataManutencaoCaminhao" title="Data da Manutenção">
+                    <input type="text" id="tipoManutencaoCaminhao" placeholder="Tipo de Serviço">
+                    <input type="number" id="custoManutencaoCaminhao" placeholder="Custo (R$)" min="0" step="0.01">
+                    <input type="text" id="descManutencaoCaminhao" placeholder="Descrição (Opcional)">
+                    <button onclick="garagem.registrarManutencao('caminhao')">Registrar Concluída</button>
+                </div>
+                <div class="manutencao-form">
+                    <h4>Agendar Manutenção Futura</h4>
+                    <input type="date" id="dataAgendamentoCaminhao" title="Data do Agendamento">
+                    <input type="time" id="horaAgendamentoCaminhao" title="Hora do Agendamento (Opcional)">
+                    <input type="text" id="tipoAgendamentoCaminhao" placeholder="Tipo de Serviço">
+                    <input type="text" id="obsAgendamentoCaminhao" placeholder="Observações (Opcional)">
+                    <button onclick="garagem.agendarManutencao('caminhao')">Agendar</button>
+                </div>
+            </div>
+        </section>
+
+        <hr>
+
+        <section class="container">
+            <h2>Informações e Histórico do Veículo</h2>
+            <div id="informacoesVeiculo">Carregando informações do caminhão...</div>
+        </section>
+        <!-- NOVO: Seção para Manutenções do Banco de Dados (Adicionar em todos os detalhes_*.html) -->
+        <hr>
+
+        <section id="secao-manutencao-db" class="container" style="display: none;">
+            <h2>Histórico de Manutenções (Banco de Dados)</h2>
+            <p>Registre e visualize o histórico de serviços realizados neste veículo.</p>
+            
+            <!-- Formulário para adicionar nova manutenção -->
+            <form id="form-add-manutencao" class="manutencao-form" style="max-width: 600px; margin: 20px auto;">
+                <h4>Adicionar Nova Manutenção</h4>
+                <input type="text" id="input-manutencao-descricao" placeholder="Descrição do Serviço (Ex: Troca de óleo)" required>
+                <input type="number" id="input-manutencao-custo" placeholder="Custo (R$)" min="0" step="0.01" required>
+                <input type="number" id="input-manutencao-km" placeholder="Quilometragem (Opcional)" min="0">
+                <button type="submit">Adicionar Manutenção</button>
+            </form>
+
+            <!-- Lista onde as manutenções serão exibidas -->
+            <div class="lista-manutencoes-container">
+                <h4>Registros Anteriores:</h4>
+                <ul id="lista-manutencoes">
+                    <!-- O JavaScript irá popular esta lista -->
+                </ul>
+            </div>
+        </section>
+    </main>
+
+    <!-- Scripts -->
+    <script src="js/manutencao.js"></script>
+    <script src="js/veiculo.js"></script>
+    <script src="js/carro.js"></script>
+    <script src="js/carroEsportivo.js"></script>
+    <script src="js/caminhao.js"></script>
+    <script src="js/moto.js"></script>
+    <script src="js/garagem.js"></script>
+    <script src="js/main_detalhes.js"></script>
+
+</body>
+</html>

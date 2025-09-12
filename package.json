@@ -1,0 +1,22 @@
+{
+  "name": "garagem-interativa-backend",
+  "version": "1.0.0",
+  "description": "Backend para o projeto Garagem Interativa com MongoDB",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "axios": "^1.10.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^4.21.2",
+    "mongoose": "^8.5.1" 
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  },
+  "author": "",
+  "license": "ISC"
+}

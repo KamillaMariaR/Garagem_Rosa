@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Detalhes da Moto - Garagem Interativa</title>
+</head>
+<body>
+    <main>
+        <!-- Menu de Navegação -->
+        <nav class="main-nav">
+            <ul>
+                <li><a href="index.html">Página Inicial</a></li>
+                <li><a href="detalhes_carro.html">Carro</a></li>
+                <li><a href="detalhes_esportivo.html">Carro Esportivo</a></li>
+                <li><a href="detalhes_caminhao.html">Caminhão</a></li>
+                <li><a href="detalhes_moto.html" class="active">Moto</a></li>
+            </ul>
+        </nav>
+        
+        <h1>Detalhes da Moto</h1>
+
+        <!-- Seção da Moto -->
+        <section class="container">
+            <h2>Moto</h2>
+            <div id="moto-container">
+                <img id="moto-imagem" src="imagens/kawasaki-Photoroom.png" alt="Imagem da Moto">
+                <p id="moto-status">Desligada</p>
+                <div class="painel-velocidade">
+                    <div class="barra-velocidade">
+                        <div class="ponteiro" id="ponteiro-moto-velocidade"></div>
+                    </div>
+                    <div class="velocidade-display" id="moto-velocidade-valor">0 km/h</div>
+                    <div class="animacao-aceleracao" id="animacao-aceleracao-moto"></div>
+                    <div class="animacao-freagem" id="animacao-freagem-moto"></div>
+                </div>
+                <p id="moto-detalhes">Modelo: <span id="moto-modelo"></span>, Cor: <span id="moto-cor"></span></p>
+                 <p id="infoMoto"></p>
+            </div>
+             <div>
+                 <input type="text" id="modeloMoto" placeholder="Modelo">
+                 <input type="text" id="corMoto" placeholder="Cor">
+                 <button onclick="garagem.criarMoto()">Criar/Atualizar Moto</button>
+            </div>
+            <div id="botoes-moto" class="botoes">
+                <button onclick="garagem.interagirComVeiculo('moto', 'ligar')" id="ligar-moto-btn">Ligar</button>
+                <button onclick="garagem.interagirComVeiculo('moto', 'desligar')" id="desligar-moto-btn">Desligar</button>
+                <button onclick="garagem.interagirComVeiculo('moto', 'acelerar')" id="acelerar-moto-btn">Acelerar</button>
+                <button onclick="garagem.interagirComVeiculo('moto', 'frear')" id="frear-moto-btn">Frear</button>
+                <br>
+                <input type="text" id="corPinturaMoto" placeholder="Nova Cor">
+                <button onclick="garagem.pintarVeiculo('moto')" id="pintar-moto-btn">Pintar</button>
+                <input type="number" id="combustivelMoto" placeholder="Add Combustível (%)" min="0" max="100">
+                <button onclick="garagem.abastecerVeiculo('moto')" id="abastecer-moto-btn">Abastecer</button>
+            </div>
+            <div class="botoes-api">
+                <button class="btn-detalhes-extras" data-veiculo-id="moto">Ver Detalhes Extras (API)</button>
+            </div>
+            <div id="detalhes-extras-moto" class="detalhes-extras-container" style="display: none;"></div>
+            <div class="manutencao-forms-container">
+                <div class="manutencao-form">
+                    <h4>Registrar Manutenção Realizada</h4>
+                    <input type="date" id="dataManutencaoMoto" title="Data da Manutenção">
+                    <input type="text" id="tipoManutencaoMoto" placeholder="Tipo de Serviço">
+                    <input type="number" id="custoManutencaoMoto" placeholder="Custo (R$)" min="0" step="0.01">
+                    <input type="text" id="descManutencaoMoto" placeholder="Descrição (Opcional)">
+                    <button onclick="garagem.registrarManutencao('moto')">Registrar Concluída</button>
+                </div>
+                <div class="manutencao-form">
+                    <h4>Agendar Manutenção Futura</h4>
+                    <input type="date" id="dataAgendamentoMoto" title="Data do Agendamento">
+                    <input type="time" id="horaAgendamentoMoto" title="Hora do Agendamento (Opcional)">
+                    <input type="text" id="tipoAgendamentoMoto" placeholder="Tipo de Serviço">
+                    <input type="text" id="obsAgendamentoMoto" placeholder="Observações (Opcional)">
+                    <button onclick="garagem.agendarManutencao('moto')">Agendar</button>
+                </div>
+            </div>
+        </section>
+
+        <hr>
+
+        <section class="container">
+            <h2>Informações e Histórico do Veículo</h2>
+            <div id="informacoesVeiculo">Carregando informações da moto...</div>
+        </section>
+        <!-- NOVO: Seção para Manutenções do Banco de Dados (Adicionar em todos os detalhes_*.html) -->
+        <hr>
+
+        <section id="secao-manutencao-db" class="container" style="display: none;">
+            <h2>Histórico de Manutenções (Banco de Dados)</h2>
+            <p>Registre e visualize o histórico de serviços realizados neste veículo.</p>
+            
+            <!-- Formulário para adicionar nova manutenção -->
+            <form id="form-add-manutencao" class="manutencao-form" style="max-width: 600px; margin: 20px auto;">
+                <h4>Adicionar Nova Manutenção</h4>
+                <input type="text" id="input-manutencao-descricao" placeholder="Descrição do Serviço (Ex: Troca de óleo)" required>
+                <input type="number" id="input-manutencao-custo" placeholder="Custo (R$)" min="0" step="0.01" required>
+                <input type="number" id="input-manutencao-km" placeholder="Quilometragem (Opcional)" min="0">
+                <button type="submit">Adicionar Manutenção</button>
+            </form>
+
+            <!-- Lista onde as manutenções serão exibidas -->
+            <div class="lista-manutencoes-container">
+                <h4>Registros Anteriores:</h4>
+                <ul id="lista-manutencoes">
+                    <!-- O JavaScript irá popular esta lista -->
+                </ul>
+            </div>
+        </section>
+    </main>
+
+    <!-- Scripts -->
+    <script src="js/manutencao.js"></script>
+    <script src="js/veiculo.js"></script>
+    <script src="js/carro.js"></script>
+    <script src="js/carroEsportivo.js"></script>
+    <script src="js/caminhao.js"></script>
+    <script src="js/moto.js"></script>
+    <script src="js/garagem.js"></script>
+    <script src="js/main_detalhes.js"></script>
+
+</body>
+</html>

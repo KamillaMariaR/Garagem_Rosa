@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Detalhes do Carro Esportivo - Garagem Interativa</title>
+</head>
+<body>
+    <main>
+        <!-- Menu de Navegação -->
+        <nav class="main-nav">
+            <ul>
+                <li><a href="index.html">Página Inicial</a></li>
+                <li><a href="detalhes_carro.html">Carro</a></li>
+                <li><a href="detalhes_esportivo.html" class="active">Carro Esportivo</a></li>
+                <li><a href="detalhes_caminhao.html">Caminhão</a></li>
+                <li><a href="detalhes_moto.html">Moto</a></li>
+            </ul>
+        </nav>
+        
+        <h1>Detalhes do Carro Esportivo</h1>
+
+        <!-- Seção do Carro Esportivo -->
+        <section class="container">
+            <h2>Carro Esportivo</h2>
+            <div id="carroEsportivo-container">
+                <img id="carroEsportivo-imagem" src="imagens/paganiRosa-removebg-preview.png" alt="Imagem do Carro Esportivo">
+                <p id="carroEsportivo-status">Desligado</p>
+                <div class="painel-velocidade">
+                    <div class="barra-velocidade">
+                        <div class="ponteiro" id="ponteiro-carroEsportivo-velocidade"></div>
+                    </div>
+                    <div class="velocidade-display" id="carroEsportivo-velocidade-valor">0 km/h</div>
+                    <div class="animacao-aceleracao" id="animacao-aceleracao-carroEsportivo"></div>
+                    <div class="animacao-freagem" id="animacao-freagem-carroEsportivo"></div>
+                </div>
+                <p id="carroEsportivo-detalhes">Modelo: <span id="carroEsportivo-modelo"></span>, Cor: <span id="carroEsportivo-cor"></span></p>
+                 <p id="infoEsportivo"></p>
+            </div>
+             <div>
+                 <input type="text" id="modeloEsportivo" placeholder="Modelo">
+                 <input type="text" id="corEsportivo" placeholder="Cor">
+                 <button onclick="garagem.criarCarroEsportivo()">Criar/Atualizar Carro Esportivo</button>
+             </div>
+            <div id="botoes-carroEsportivo" class="botoes">
+                <button onclick="garagem.interagirComVeiculo('carroEsportivo', 'ligar')" id="ligar-carroEsportivo-btn">Ligar</button>
+                <button onclick="garagem.interagirComVeiculo('carroEsportivo', 'desligar')" id="desligar-carroEsportivo-btn">Desligar</button>
+                <button onclick="garagem.interagirComVeiculo('carroEsportivo', 'acelerar')" id="acelerar-carroEsportivo-btn">Acelerar</button>
+                <button onclick="garagem.interagirComVeiculo('carroEsportivo', 'frear')" id="frear-carroEsportivo-btn">Frear</button>
+                <button onclick="garagem.interagirComVeiculo('carroEsportivo', 'ativarTurbo')">Ativar Turbo</button>
+                <button onclick="garagem.interagirComVeiculo('carroEsportivo', 'desativarTurbo')">Desativar Turbo</button>
+                <br>
+                <input type="text" id="corPinturaEsportivo" placeholder="Nova Cor">
+                <button onclick="garagem.pintarVeiculo('carroEsportivo')" id="pintar-carroEsportivo-btn">Pintar</button>
+                <input type="number" id="combustivelEsportivo" placeholder="Add Combustível (%)" min="0" max="100">
+                <button onclick="garagem.abastecerVeiculo('carroEsportivo')" id="abastecer-carroEsportivo-btn">Abastecer</button>
+            </div>
+            <div class="botoes-api">
+                <button class="btn-detalhes-extras" data-veiculo-id="carroEsportivo">Ver Detalhes Extras (API)</button>
+            </div>
+            <div id="detalhes-extras-carroEsportivo" class="detalhes-extras-container" style="display: none;"></div>
+            <div class="manutencao-forms-container">
+                <div class="manutencao-form">
+                    <h4>Registrar Manutenção Realizada</h4>
+                    <input type="date" id="dataManutencaoEsportivo" title="Data da Manutenção">
+                    <input type="text" id="tipoManutencaoEsportivo" placeholder="Tipo de Serviço">
+                    <input type="number" id="custoManutencaoEsportivo" placeholder="Custo (R$)" min="0" step="0.01">
+                    <input type="text" id="descManutencaoEsportivo" placeholder="Descrição (Opcional)">
+                    <button onclick="garagem.registrarManutencao('carroEsportivo')">Registrar Concluída</button>
+                </div>
+                <div class="manutencao-form">
+                    <h4>Agendar Manutenção Futura</h4>
+                    <input type="date" id="dataAgendamentoEsportivo" title="Data do Agendamento">
+                    <input type="time" id="horaAgendamentoEsportivo" title="Hora do Agendamento (Opcional)">
+                    <input type="text" id="tipoAgendamentoEsportivo" placeholder="Tipo de Serviço">
+                    <input type="text" id="obsAgendamentoEsportivo" placeholder="Observações (Opcional)">
+                    <button onclick="garagem.agendarManutencao('carroEsportivo')">Agendar</button>
+                </div>
+            </div>
+        </section>
+
+        <hr>
+
+        <section class="container">
+            <h2>Informações e Histórico do Veículo</h2>
+            <div id="informacoesVeiculo">Carregando informações do carro esportivo...</div>
+        </section>
+        <!-- NOVO: Seção para Manutenções do Banco de Dados (Adicionar em todos os detalhes_*.html) -->
+        <hr>
+
+        <section id="secao-manutencao-db" class="container" style="display: none;">
+            <h2>Histórico de Manutenções (Banco de Dados)</h2>
+            <p>Registre e visualize o histórico de serviços realizados neste veículo.</p>
+            
+            <!-- Formulário para adicionar nova manutenção -->
+            <form id="form-add-manutencao" class="manutencao-form" style="max-width: 600px; margin: 20px auto;">
+                <h4>Adicionar Nova Manutenção</h4>
+                <input type="text" id="input-manutencao-descricao" placeholder="Descrição do Serviço (Ex: Troca de óleo)" required>
+                <input type="number" id="input-manutencao-custo" placeholder="Custo (R$)" min="0" step="0.01" required>
+                <input type="number" id="input-manutencao-km" placeholder="Quilometragem (Opcional)" min="0">
+                <button type="submit">Adicionar Manutenção</button>
+            </form>
+
+            <!-- Lista onde as manutenções serão exibidas -->
+            <div class="lista-manutencoes-container">
+                <h4>Registros Anteriores:</h4>
+                <ul id="lista-manutencoes">
+                    <!-- O JavaScript irá popular esta lista -->
+                </ul>
+            </div>
+        </section>
+    </main>
+
+    <!-- Scripts -->
+    <script src="js/manutencao.js"></script>
+    <script src="js/veiculo.js"></script>
+    <script src="js/carro.js"></script>
+    <script src="js/carroEsportivo.js"></script>
+    <script src="js/caminhao.js"></script>
+    <script src="js/moto.js"></script>
+    <script src="js/garagem.js"></script>
+    <script src="js/main_detalhes.js"></script>
+
+</body>
+</html>

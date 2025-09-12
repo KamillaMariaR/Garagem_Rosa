@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // === VARIÁVEIS GLOBAIS E CONSTANTES ===
     const garagem = new Garagem();
-   const backendUrl = 'https://garagem-interativa-1.onrender.com/';
+   const backendUrl = 'https://garagem-interativa-1.onrender.com';
     
     // --- Variáveis para controlar o modo de edição ---
     const formVeiculo = document.getElementById('form-add-veiculo');
@@ -384,3 +384,4 @@ document.addEventListener('DOMContentLoaded', () => {
     // garagem.atualizarListaAgendamentos();
 
 });
+

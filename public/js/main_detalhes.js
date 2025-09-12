@@ -1,7 +1,7 @@
 // js/main_detalhes.js (CORRIGIDO - Botão "Detalhes Extras" agora funciona sempre)
 
 const garagem = new Garagem();
-const backendUrl = 'http://localhost:3001';
+const backendUrl = 'https://garagem-interativa-1.onrender.com/';
 let veiculoDbId = null;
 
 /**
@@ -193,4 +193,5 @@ window.onload = async () => {
     }
 
     console.log("Inicialização da página de detalhes completa.");
+
 };

@@ -1,4 +1,4 @@
-// server.js (Versão Final com AUTENTICAÇÃO E ORDEM DE ROTAS CORRIGIDA)
+// server.js (Versão Final com AUTENTICAÇÃO e PERMISSÃO PARA IMAGENS DO CLIMA)
 
 const express = require('express');
 const cors = require('cors');
@@ -28,7 +28,9 @@ app.use(
     contentSecurityPolicy: {
       directives: {
         ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-        "connect-src": ["'self'", "https://garagem-interativa-1.onrender.com", "http://localhost:3001"],
+        "connect-src": ["'self'", "https://garagem-interativa-1.onrender.com", "http://localhost:3001", "http://api.openweathermap.org"],
+        // <-- CORRIGIDO: Adicionada permissão para carregar imagens do OpenWeatherMap
+        "img-src": ["'self'", "data:", "https://openweathermap.org"],
       },
     },
   })
@@ -80,7 +82,7 @@ const connectDB = async () => {
 };
 
 // ==========================================================
-// === DEFINIÇÃO DAS ROTAS DA API (IMPORTANTE: ANTES DOS ARQUIVOS ESTÁTICOS) ===
+// === DEFINIÇÃO DAS ROTAS DA API (ANTES DOS ARQUIVOS ESTÁTICOS) ===
 // ==========================================================
 
 // --- ROTAS DE AUTENTICAÇÃO ---
@@ -255,7 +257,6 @@ app.get('/clima', async (req, res) => {
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Rota Curinga: Se nenhuma rota da API correspondeu, envia o index.html
-// Isso é útil para Single Page Applications (SPAs)
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });

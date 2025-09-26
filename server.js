@@ -1,51 +1,74 @@
-// server.js (Versão Final com Proteções de Segurança)
+// server.js (Versão Final com AUTENTICAÇÃO E ORDEM DE ROTAS CORRIGIDA)
 
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const axios = require('axios');
 const path = require('path');
-const helmet = require('helmet'); // <-- ADICIONADO: Para segurança dos cabeçalhos HTTP
-const rateLimit = require('express-rate-limit'); // <-- ADICIONADO: Para limitar requisições
-require('dotenv').config(); 
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+require('dotenv').config();
 
-const Veiculo = require('./models/veiculo.js'); 
+// Imports para autenticação
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
+// Models e Middleware
+const Veiculo = require('./models/veiculo.js');
 const Manutencao = require('./models/Manutencao.js');
+const User = require('./models/User.js');
+const authMiddleware = require('./middleware/auth.js');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// --- CONFIGURAÇÃO DE SEGURANÇA ---
-app.use(helmet()); // <-- ADICIONADO: Usa o Helmet para adicionar cabeçalhos de segurança essenciais
+// --- CONFIGURAÇÃO DE SEGURANÇA E MIDDLEWARES GERAIS ---
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+        "connect-src": ["'self'", "https://garagem-interativa-1.onrender.com", "http://localhost:3001"],
+      },
+    },
+  })
+);
 
-// ADICIONADO: Limitador geral para prevenir ataques de força bruta ou DoS
+app.use(cors());
+app.use(express.json()); // Middleware para parsear JSON
+
+// Limitadores de requisição
 const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // Janela de 15 minutos
-    max: 200, // Limita cada IP a 200 requisições a cada 15 minutos
+    windowMs: 15 * 60 * 1000,
+    max: 200,
     standardHeaders: true,
     legacyHeaders: false,
     message: 'Muitas requisições enviadas deste IP, por favor, tente novamente mais tarde.'
 });
-app.use(limiter); // Aplica o limitador geral a todas as rotas
+app.use(limiter);
 
-// ADICIONADO: Limitador mais estrito especificamente para a criação de veículos
 const createVehicleLimiter = rateLimit({
-    windowMs: 60 * 60 * 1000, // Janela de 1 hora
-    max: 10, // Permite a criação de no máximo 10 veículos por IP a cada hora
+    windowMs: 60 * 60 * 1000,
+    max: 10,
     message: 'Você atingiu o limite de criação de veículos. Tente novamente mais tarde.',
 });
-// --- FIM DA CONFIGURAÇÃO DE SEGURANÇA ---
 
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 15, 
+    message: 'Muitas tentativas de autenticação. Tente novamente mais tarde.',
+});
 
-app.use(cors());
-app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')))
-
+// --- CONEXÃO COM O BANCO DE DADOS ---
 const connectDB = async () => {
     try {
         const mongoUri = process.env.MONGO_URI;
         if (!mongoUri) {
             console.error("ERRO FATAL: Variável MONGO_URI não definida! Verifique seu .env");
+            process.exit(1);
+        }
+        if (!process.env.JWT_SECRET) {
+            console.error("ERRO FATAL: Variável JWT_SECRET não definida! Verifique seu .env");
             process.exit(1);
         }
         await mongoose.connect(mongoUri);
@@ -56,126 +79,189 @@ const connectDB = async () => {
     }
 };
 
+// ==========================================================
+// === DEFINIÇÃO DAS ROTAS DA API (IMPORTANTE: ANTES DOS ARQUIVOS ESTÁTICOS) ===
+// ==========================================================
+
+// --- ROTAS DE AUTENTICAÇÃO ---
+app.post('/api/auth/register', authLimiter, async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        if (!email || !password) {
+            return res.status(400).json({ error: 'E-mail e senha são obrigatórios.' });
+        }
+        let user = await User.findOne({ email });
+        if (user) {
+            return res.status(400).json({ error: 'Usuário com este e-mail já existe.' });
+        }
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+        user = new User({ email, password: hashedPassword });
+        await user.save();
+        res.status(201).json({ message: 'Usuário registrado com sucesso!' });
+    } catch (e) {
+        console.error(e.message);
+        res.status(500).json({ error: 'Erro no servidor.' });
+    }
+});
+
+app.post('/api/auth/login', authLimiter, async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        if (!email || !password) {
+            return res.status(400).json({ error: 'E-mail e senha são obrigatórios.' });
+        }
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(400).json({ error: 'Credenciais inválidas.' });
+        }
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ error: 'Credenciais inválidas.' });
+        }
+        const payload = { userId: user.id };
+        const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
+        res.status(200).json({ token, email: user.email });
+    } catch (e) {
+        console.error(e.message);
+        res.status(500).json({ error: 'Erro no servidor.' });
+    }
+});
+
+// --- ROTAS DE VEÍCULOS (PROTEGIDAS) ---
+app.post('/api/veiculos', authMiddleware, createVehicleLimiter, async (req, res) => {
+    try {
+        const v = await Veiculo.create({ ...req.body, owner: req.userId });
+        res.status(201).json(v);
+    } catch (e) {
+        if (e.code === 11000) {
+            return res.status(400).json({ error: 'Você já possui um veículo com esta placa.' });
+        }
+        res.status(400).json({ error: e.message });
+    }
+});
+
+app.get('/api/veiculos', authMiddleware, async (req, res) => {
+    try {
+        const v = await Veiculo.find({ owner: req.userId }).sort({ createdAt: -1 });
+        res.json(v);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.put('/api/veiculos/:id', authMiddleware, async (req, res) => {
+    try {
+        const { marca, modelo, ano, cor, placa } = req.body;
+        const dadosParaAtualizar = { marca, modelo, ano, cor, placa };
+        const veiculo = await Veiculo.findById(req.params.id);
+        if (!veiculo) {
+            return res.status(404).json({ error: 'Veículo não encontrado.' });
+        }
+        if (veiculo.owner.toString() !== req.userId) {
+            return res.status(403).json({ error: 'Acesso negado. Você não é o proprietário deste veículo.' });
+        }
+        const v = await Veiculo.findByIdAndUpdate(req.params.id, dadosParaAtualizar, { new: true, runValidators: true });
+        res.json(v);
+    } catch (e) {
+        if (e.code === 11000) {
+            return res.status(400).json({ error: 'Você já possui um veículo com esta placa.' });
+        }
+        res.status(400).json({ error: e.message });
+    }
+});
+
+app.delete('/api/veiculos/:id', authMiddleware, async (req, res) => {
+    try {
+        const veiculo = await Veiculo.findById(req.params.id);
+        if (!veiculo) {
+            return res.status(404).json({ error: 'Veículo não encontrado.' });
+        }
+        if (veiculo.owner.toString() !== req.userId) {
+            return res.status(403).json({ error: 'Acesso negado. Você não é o proprietário deste veículo.' });
+        }
+        await Manutencao.deleteMany({ veiculo: req.params.id });
+        await Veiculo.findByIdAndDelete(req.params.id);
+        res.json({ message: 'Veículo deletado!' });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// --- ROTAS DE MANUTENÇÃO (PROTEGIDAS) ---
+app.post('/api/veiculos/:veiculoId/manutencoes', authMiddleware, async (req, res) => {
+    try {
+        const veiculo = await Veiculo.findById(req.params.veiculoId);
+        if (!veiculo) return res.status(404).json({ error: 'Veículo não encontrado.' });
+        if (veiculo.owner.toString() !== req.userId) return res.status(403).json({ error: 'Acesso negado.' });
+        const m = await Manutencao.create({ ...req.body, veiculo: req.params.veiculoId });
+        res.status(201).json(m);
+    } catch (e) {
+        res.status(400).json({ error: e.message });
+    }
+});
+
+app.get('/api/veiculos/:veiculoId/manutencoes', authMiddleware, async (req, res) => {
+    try {
+        const veiculo = await Veiculo.findById(req.params.veiculoId);
+        if (!veiculo) return res.status(404).json({ error: 'Veículo não encontrado.' });
+        if (veiculo.owner.toString() !== req.userId) return res.status(403).json({ error: 'Acesso negado.' });
+        const m = await Manutencao.find({ veiculo: req.params.veiculoId }).sort({ data: -1 });
+        res.json(m);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// --- ROTAS PÚBLICAS ---
 const servicosOferecidos = [
     { nome: "Troca de Óleo e Filtro", descricao: "Serviço completo.", precoEstimado: "R$ 250,00" },
     { nome: "Alinhamento e Balanceamento", descricao: "Direção mais segura.", precoEstimado: "R$ 150,00" },
 ];
-const dicasGerais = [{dica: "Verifique a calibragem dos pneus semanalmente."}, {dica: "Troque o óleo no prazo."}];
+const dicasGerais = [{ dica: "Verifique a calibragem dos pneus semanalmente." }, { dica: "Troque o óleo no prazo." }];
 const dicasPorTipo = {
-    carro: [{dica: "Faça o rodízio dos pneus a cada 10.000 km."}],
-    moto: [{dica: "Lubrifique a corrente regularmente."}],
+    carro: [{ dica: "Faça o rodízio dos pneus a cada 10.000 km." }],
+    moto: [{ dica: "Lubrifique a corrente regularmente." }],
 };
-
-// --- ROTAS DE VEÍCULOS ---
-// ADICIONADO: O middleware 'createVehicleLimiter' foi aplicado a esta rota específica
-app.post('/api/veiculos', createVehicleLimiter, async (req, res) => { 
-    try { 
-        const v = await Veiculo.create(req.body); 
-        res.status(201).json(v); 
-    } catch (e) { 
-        res.status(400).json({ error: e.message }); 
-    } 
-});
-
-app.get('/api/veiculos', async (req, res) => { 
-    try { 
-        const v = await Veiculo.find().sort({ createdAt: -1 }); 
-        res.json(v); 
-    } catch (e) { 
-        res.status(500).json({ error: e.message }); 
-    } 
-});
-
-// ALTERADO: Rota de atualização mais segura, definindo explicitamente os campos permitidos
-app.put('/api/veiculos/:id', async (req, res) => { 
-    try {
-        // Extrai apenas os campos que o usuário pode modificar.
-        // Isso previne que um invasor tente atualizar campos protegidos como 'createdAt'.
-        const { marca, modelo, ano, cor } = req.body;
-        const dadosParaAtualizar = { marca, modelo, ano, cor };
-
-        const v = await Veiculo.findByIdAndUpdate(req.params.id, dadosParaAtualizar, { new: true, runValidators: true }); 
-        
-        if (!v) {
-            return res.status(404).json({ error: 'Veículo não encontrado.' });
-        }
-        res.json(v); 
-    } catch (e) { 
-        res.status(400).json({ error: e.message }); 
-    } 
-});
-
-app.delete('/api/veiculos/:id', async (req, res) => { 
-    try { 
-        await Manutencao.deleteMany({ veiculo: req.params.id }); 
-        await Veiculo.findByIdAndDelete(req.params.id); 
-        res.json({ message: 'Veículo deletado!' }); 
-    } catch (e) { 
-        res.status(500).json({ error: e.message }); 
-    } 
-});
-
-// --- ROTAS DE MANUTENÇÃO ---
-app.post('/api/veiculos/:veiculoId/manutencoes', async (req, res) => { 
-    try { 
-        const m = await Manutencao.create({ ...req.body, veiculo: req.params.veiculoId }); 
-        res.status(201).json(m); 
-    } catch (e) { 
-        res.status(400).json({ error: e.message }); 
-    } 
-});
-
-app.get('/api/veiculos/:veiculoId/manutencoes', async (req, res) => { 
-    try { 
-        const m = await Manutencao.find({ veiculo: req.params.veiculoId }).sort({ data: -1 }); 
-        res.json(m); 
-    } catch (e) { 
-        res.status(500).json({ error: e.message }); 
-    } 
-});
-
-// --- ROTAS DE GARAGEM ---
-app.get('/api/garagem/veiculos-destaque', (req, res) => { 
-    res.json([ 
-        { modelo: "Honda Civic", ano: "2021", destaque: "O carro confiável", imagemUrl: "imagens/civic-removebg-preview.png" }, 
-        { modelo: "Pagani Huayra", ano: "2023", destaque: "A pura esportividade", imagemUrl: "imagens/paganiRosa-removebg-preview.png" }, 
-        { modelo: "Mercedes-Benz Actros", ano: "2022", destaque: "Força para o trabalho", imagemUrl: "imagens/caminhão-removebg-preview.png" }, 
-        { modelo: "Kawasaki Ninja", ano: "2024", destaque: "Velocidade em duas rodas", imagemUrl: "imagens/kawasaki-Photoroom.png" } 
-    ]); 
-});
+app.get('/api/garagem/veiculos-destaque', (req, res) => res.json([
+    { modelo: "Honda Civic", ano: "2021", destaque: "O carro confiável", imagemUrl: "imagens/civic-removebg-preview.png" },
+    { modelo: "Pagani Huayra", ano: "2023", destaque: "A pura esportividade", imagemUrl: "imagens/paganiRosa-removebg-preview.png" },
+    { modelo: "Mercedes-Benz Actros", ano: "2022", destaque: "Força para o trabalho", imagemUrl: "imagens/caminhão-removebg-preview.png" },
+    { modelo: "Kawasaki Ninja", ano: "2024", destaque: "Velocidade em duas rodas", imagemUrl: "imagens/kawasaki-Photoroom.png" }
+]));
 app.get('/api/garagem/servicos-oferecidos', (req, res) => res.json(servicosOferecidos));
 app.get('/api/dicas-manutencao/:tipo?', (req, res) => res.json(dicasPorTipo[req.params.tipo?.toLowerCase()] || dicasGerais));
-
-// --- ROTA DE CLIMA ---
 app.get('/clima', async (req, res) => {
     const cidade = req.query.cidade;
     const apiKey = process.env.OPENWEATHER_API_KEY;
-    
-    if (!apiKey) {
-        console.error("ERRO: Chave da API OpenWeatherMap não encontrada. Verifique o .env");
-        return res.status(500).json({ message: "Configuração do servidor incorreta." });
-    }
-    if (!cidade) {
-        return res.status(400).json({ message: "O nome da cidade é obrigatório." });
-    }
-    
+    if (!apiKey) return res.status(500).json({ message: "Configuração do servidor incorreta." });
+    if (!cidade) return res.status(400).json({ message: "O nome da cidade é obrigatório." });
     const cidadeQuery = cidade.includes(',') ? cidade : `${cidade},BR`;
     const url = `http://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(cidadeQuery)}&appid=${apiKey}&units=metric&lang=pt_br`;
-    
-    console.log(`[CLIMA] Buscando por: "${cidadeQuery}"`);
-    
     try {
         const response = await axios.get(url);
-        res.json(response.data); 
+        res.json(response.data);
     } catch (error) {
         const status = error.response?.status || 500;
         const message = status === 404 ? "Cidade não encontrada." : "Erro ao buscar dados do clima.";
-        console.error(`[CLIMA] Erro ${status}: ${message}`);
         res.status(status).json({ message });
     }
 });
 
-// --- INICIALIZAÇÃO ---
+
+// ==========================================================
+// === SERVIR ARQUIVOS ESTÁTICOS (DEVE VIR DEPOIS DAS ROTAS DA API) ===
+// ==========================================================
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Rota Curinga: Se nenhuma rota da API correspondeu, envia o index.html
+// Isso é útil para Single Page Applications (SPAs)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+
+// --- INICIALIZAÇÃO DO SERVIDOR ---
 const startServer = async () => {
     await connectDB();
     app.listen(PORT, () => console.log(`✅ Servidor da GARAGEM INTERATIVA rodando na porta ${PORT}`));

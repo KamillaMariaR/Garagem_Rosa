@@ -1,31 +1,138 @@
-// js/main.js (CORRIGIDO - Sem duplicação)
-
+// js/main.js
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("DOM carregado. Iniciando script...");
+    console.log("DOM carregado. Iniciando script principal...");
 
-    // === VARIÁVEIS GLOBAIS E CONSTANTES ===
-    const garagem = new Garagem();
-   const backendUrl = 'https://garagem-interativa-1.onrender.com';
-    
-    // --- Variáveis para controlar o modo de edição ---
+    // === SELETORES DE ELEMENTOS ===
+    const secaoAuth = document.getElementById('secao-autenticacao');
+    const conteudoPrincipal = document.getElementById('conteudo-principal');
+    const userInfoNav = document.getElementById('user-info-nav');
+    const userEmailDisplay = document.getElementById('user-email-display');
+    const formLogin = document.getElementById('form-login');
+    const formRegister = document.getElementById('form-register');
+    const btnLogout = document.getElementById('btn-logout');
+    const linkMostrarRegistro = document.getElementById('link-mostrar-registro');
+    const linkMostrarLogin = document.getElementById('link-mostrar-login');
+    const containerRegistro = document.getElementById('container-registro');
+    const authErrorMessage = document.getElementById('auth-error-message');
     const formVeiculo = document.getElementById('form-add-veiculo');
     const btnSubmit = document.getElementById('btn-submit-veiculo');
+    
     let modoEdicao = { ativo: false, veiculoId: null };
-
-    // --- Variáveis para o Clima ---
     let dadosPrevisaoGlobal = null;
     let unidadeTemperaturaAtual = localStorage.getItem('unidadeTemperaturaPreferida') || 'C';
 
     // =============================================================
-    // === SEÇÃO DE VEÍCULOS (BANCO DE DADOS - CRUD) ===
+    // === LÓGICA DE CONTROLE DA UI (LOGIN/LOGOUT) ===
+    // =============================================================
+
+    function updateUIForAuthState() {
+        if (isLoggedIn()) {
+            secaoAuth.style.display = 'none';
+            conteudoPrincipal.style.display = 'block';
+            userInfoNav.style.display = 'flex';
+            userEmailDisplay.textContent = getUserEmail();
+            document.getElementById('nav-link-carro').style.display = 'list-item';
+            document.getElementById('nav-link-esportivo').style.display = 'list-item';
+            document.getElementById('nav-link-caminhao').style.display = 'list-item';
+            document.getElementById('nav-link-moto').style.display = 'list-item';
+            carregarDadosLogado();
+        } else {
+            secaoAuth.style.display = 'block';
+            conteudoPrincipal.style.display = 'none';
+            userInfoNav.style.display = 'none';
+            userEmailDisplay.textContent = '';
+            document.getElementById('nav-link-carro').style.display = 'none';
+            document.getElementById('nav-link-esportivo').style.display = 'none';
+            document.getElementById('nav-link-caminhao').style.display = 'none';
+            document.getElementById('nav-link-moto').style.display = 'none';
+        }
+    }
+    
+    function carregarDadosLogado() {
+        buscarEExibirVeiculosNaTabela();
+        carregarVeiculosDestaque();
+        carregarServicos();
+    }
+    
+    function showAuthError(message) {
+        authErrorMessage.textContent = message;
+        authErrorMessage.style.display = 'block';
+    }
+
+    // =============================================================
+    // === EVENT LISTENERS DE AUTENTICAÇÃO ===
+    // =============================================================
+    
+    formLogin.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        showAuthError('');
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+        try {
+            const response = await fetch(`${backendUrl}/api/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'Erro desconhecido.');
+            saveAuthData(data.token, data.email);
+            updateUIForAuthState();
+        } catch (error) {
+            showAuthError(`Falha no login: ${error.message}`);
+        }
+    });
+
+    formRegister.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        showAuthError('');
+        const email = document.getElementById('register-email').value;
+        const password = document.getElementById('register-password').value;
+        try {
+            const response = await fetch(`${backendUrl}/api/auth/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'Erro desconhecido.');
+            alert('Registro bem-sucedido! Agora você pode fazer login.');
+            containerRegistro.style.display = 'none';
+            formLogin.style.display = 'block';
+        } catch (error) {
+            showAuthError(`Falha no registro: ${error.message}`);
+        }
+    });
+    
+    btnLogout.addEventListener('click', () => {
+        clearAuthData();
+        updateUIForAuthState();
+    });
+
+    linkMostrarRegistro.addEventListener('click', (e) => {
+        e.preventDefault();
+        formLogin.style.display = 'none';
+        containerRegistro.style.display = 'block';
+        showAuthError('');
+    });
+    
+    linkMostrarLogin.addEventListener('click', (e) => {
+        e.preventDefault();
+        containerRegistro.style.display = 'none';
+        formLogin.style.display = 'block';
+        showAuthError('');
+    });
+
+    // =============================================================
+    // === SEÇÃO DE VEÍCULOS (CRUD) ===
     // =============================================================
 
     async function buscarEExibirVeiculosNaTabela() {
         const tbody = document.getElementById('tbody-veiculos');
         if (!tbody) return;
-        tbody.innerHTML = `<tr><td colspan="7">Carregando frota...</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7">Carregando sua frota...</td></tr>`;
         try {
-            const response = await fetch(`${backendUrl}/api/veiculos`);
+            const response = await fetchWithAuth(`${backendUrl}/api/veiculos`);
             if (!response.ok) throw new Error('Falha ao buscar veículos do servidor.');
             const veiculos = await response.json();
             if (veiculos.length === 0) {
@@ -89,7 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
         errorMessageDiv.style.display = 'none';
 
         try {
-            const response = await fetch(`${backendUrl}/api/veiculos/${id}`, {
+            const response = await fetchWithAuth(`${backendUrl}/api/veiculos/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(veiculoData),
@@ -133,7 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btnSubmit.textContent = 'Enviando...';
         errorMessageDiv.style.display = 'none';
         try {
-            const response = await fetch(`${backendUrl}/api/veiculos`, {
+            const response = await fetchWithAuth(`${backendUrl}/api/veiculos`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(veiculoData),
@@ -155,7 +262,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function handleDeletarVeiculo(id, placa) {
         if (!confirm(`Tem certeza que deseja deletar o veículo de placa ${placa}?`)) return;
         try {
-            const response = await fetch(`${backendUrl}/api/veiculos/${id}`, { method: 'DELETE' });
+            const response = await fetchWithAuth(`${backendUrl}/api/veiculos/${id}`, { method: 'DELETE' });
             const data = await response.json();
             if (!response.ok) throw new Error(data.error || 'Não foi possível deletar o veículo.');
             alert(data.message);
@@ -164,9 +271,85 @@ document.addEventListener('DOMContentLoaded', () => {
             alert(`Erro: ${error.message}`);
         }
     }
+    
+    formVeiculo?.addEventListener('submit', (event) => {
+        if (modoEdicao.ativo) {
+            handleSalvarEdicao(event);
+        } else {
+            handleAdicionarVeiculo(event);
+        }
+    });
+
+    document.getElementById('tbody-veiculos')?.addEventListener('click', (event) => {
+        const target = event.target;
+        if (target.classList.contains('btn-delete')) {
+            handleDeletarVeiculo(target.dataset.id, target.dataset.placa);
+        }
+        if (target.classList.contains('btn-edit')) {
+            handleIniciarEdicao(target.dataset.id);
+        }
+    });
 
     // =============================================================
-    // === SEÇÃO DE PREVISÃO DO TEMPO (CLIMA) ===
+    // === CARREGAMENTO DAS SEÇÕES PÚBLICAS ===
+    // =============================================================
+    
+    async function carregarVeiculosDestaque() {
+        const container = document.getElementById('cards-veiculos-destaque');
+        if (!container) return;
+        try {
+            const response = await fetch(`${backendUrl}/api/garagem/veiculos-destaque`);
+            const data = await response.json();
+            if (data.length === 0) {
+                container.innerHTML = '<p>Nenhum veículo para destacar.</p>';
+                return;
+            }
+            container.innerHTML = data.map(v => `
+                <div class="veiculo-card">
+                    <img src="${v.imagemUrl}" alt="${v.modelo}" onerror="this.onerror=null;this.src='imagens/civic-removebg-preview.png';">
+                    <h3>${v.modelo} (${v.ano})</h3>
+                    <p><strong>${v.destaque}</strong></p>
+                </div>`).join('');
+                
+        } catch (error) {
+            container.innerHTML = `<p class="error">${error.message}</p>`;
+        }
+    }
+
+    async function carregarServicos() {
+        const container = document.getElementById('lista-servicos-oferecidos');
+        if (!container) return;
+        try {
+            const response = await fetch(`${backendUrl}/api/garagem/servicos-oferecidos`);
+            const data = await response.json();
+            container.innerHTML = data.map(s => `<li><strong>${s.nome}</strong><br><span>${s.descricao} (Preço Estimado: ${s.precoEstimado})</span></li>`).join('');
+        } catch (error) {
+            container.innerHTML = `<li class="error">${error.message}</li>`;
+        }
+    }
+    
+    async function buscarEExibirDicas(url) {
+        const container = document.getElementById('dicas-resultado-container');
+        if (!container) return;
+        container.innerHTML = '<p class="loading">Buscando dicas...</p>';
+        try {
+            const response = await fetch(url);
+            const dicas = await response.json();
+            if (!response.ok) throw new Error(dicas.error || 'Erro ao buscar dicas.');
+            container.innerHTML = '<ul>' + dicas.map(d => `<li>${d.dica}</li>`).join('') + '</ul>';
+        } catch (error) {
+            container.innerHTML = `<p class="error">${error.message}</p>`;
+        }
+    }
+
+    document.getElementById('btn-buscar-dicas-gerais')?.addEventListener('click', () => buscarEExibirDicas(`${backendUrl}/api/dicas-manutencao`));
+    document.getElementById('btn-buscar-dicas-especificas')?.addEventListener('click', () => {
+        const tipo = document.getElementById('input-tipo-veiculo').value.trim();
+        if (tipo) buscarEExibirDicas(`${backendUrl}/api/dicas-manutencao/${tipo}`);
+    });
+
+    // =============================================================
+    // === SEÇÃO DE PREVISÃO DO TEMPO ===
     // =============================================================
 
     function celsiusParaFahrenheit(celsius) { return (celsius * 9 / 5) + 32; }
@@ -262,87 +445,7 @@ document.addEventListener('DOMContentLoaded', () => {
         htmlConteudo += '</div>';
         previsaoResultadoDiv.innerHTML = htmlConteudo;
     }
-    
-    // =============================================================
-    // === CARREGAMENTO DAS OUTRAS SEÇÕES ===
-    // =============================================================
-    
-    async function carregarVeiculosDestaque() {
-        const container = document.getElementById('cards-veiculos-destaque');
-        if (!container) return;
-        try {
-            const response = await fetch(`${backendUrl}/api/garagem/veiculos-destaque`);
-            const data = await response.json();
-            if (data.length === 0) {
-                container.innerHTML = '<p>Nenhum veículo para destacar.</p>';
-                return;
-            }
-            container.innerHTML = data.map(v => `
-                <div class="veiculo-card">
-                    <img src="${v.imagemUrl}" alt="${v.modelo}" onerror="this.onerror=null;this.src='imagens/civic-removebg-preview.png';">
-                    <h3>${v.modelo} (${v.ano})</h3>
-                    <p><strong>${v.destaque}</strong></p>
-                </div>`).join('');
-                
-        } catch (error) {
-            container.innerHTML = `<p class="error">${error.message}</p>`;
-        }
-    }
 
-    async function carregarServicos() {
-        const container = document.getElementById('lista-servicos-oferecidos');
-        if (!container) return;
-        try {
-            const response = await fetch(`${backendUrl}/api/garagem/servicos-oferecidos`);
-            const data = await response.json();
-            container.innerHTML = data.map(s => `<li><strong>${s.nome}</strong><br><span>${s.descricao} (Preço Estimado: ${s.precoEstimado})</span></li>`).join('');
-        } catch (error) {
-            container.innerHTML = `<li class="error">${error.message}</li>`;
-        }
-    }
-    
-    async function buscarEExibirDicas(url) {
-        const container = document.getElementById('dicas-resultado-container');
-        if (!container) return;
-        container.innerHTML = '<p class="loading">Buscando dicas...</p>';
-        try {
-            const response = await fetch(url);
-            const dicas = await response.json();
-            if (!response.ok) throw new Error(dicas.error || 'Erro ao buscar dicas.');
-            container.innerHTML = '<ul>' + dicas.map(d => `<li>${d.dica}</li>`).join('') + '</ul>';
-        } catch (error) {
-            container.innerHTML = `<p class="error">${error.message}</p>`;
-        }
-    }
-    
-    // =============================================================
-    // === INICIALIZAÇÃO GERAL E EVENTOS ===
-    // =============================================================
-    
-    formVeiculo?.addEventListener('submit', (event) => {
-        if (modoEdicao.ativo) {
-            handleSalvarEdicao(event);
-        } else {
-            handleAdicionarVeiculo(event);
-        }
-    });
-
-    document.getElementById('tbody-veiculos')?.addEventListener('click', (event) => {
-        const target = event.target;
-        if (target.classList.contains('btn-delete')) {
-            handleDeletarVeiculo(target.dataset.id, target.dataset.placa);
-        }
-        if (target.classList.contains('btn-edit')) {
-            handleIniciarEdicao(target.dataset.id);
-        }
-    });
-
-    document.getElementById('btn-buscar-dicas-gerais')?.addEventListener('click', () => buscarEExibirDicas(`${backendUrl}/api/dicas-manutencao`));
-    document.getElementById('btn-buscar-dicas-especificas')?.addEventListener('click', () => {
-        const tipo = document.getElementById('input-tipo-veiculo').value.trim();
-        if (tipo) buscarEExibirDicas(`${backendUrl}/api/dicas-manutencao/${tipo}`);
-    });
-    
     document.getElementById('verificar-clima-btn')?.addEventListener('click', () => fetchForecastData(document.getElementById('destino-viagem').value));
     
     const btnAlternarUnidade = document.getElementById('alternar-unidade-temp-btn');
@@ -375,13 +478,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    buscarEExibirVeiculosNaTabela();
-    carregarVeiculosDestaque();
-    carregarServicos();
-    
-    garagem.carregarGaragem();
-    // A linha abaixo busca por um elemento que não existe no index.html e pode ser removida com segurança
-    // garagem.atualizarListaAgendamentos();
-
+    // --- INICIALIZAÇÃO DA PÁGINA ---
+    updateUIForAuthState();
 });
-

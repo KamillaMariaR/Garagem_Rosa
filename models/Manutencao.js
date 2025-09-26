@@ -1,8 +1,6 @@
 // models/Manutencao.js
-
 const mongoose = require('mongoose');
 
-// Criando o Schema de Manutenção conforme a Fase 1
 const manutencaoSchema = new mongoose.Schema({
     descricaoServico: {
         type: String,
@@ -23,14 +21,12 @@ const manutencaoSchema = new mongoose.Schema({
         min: [0, 'A quilometragem não pode ser negativa.'],
         default: 0
     },
-    // Campo de relacionamento com o Veículo
     veiculo: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Veiculo', // Referencia o modelo 'Veiculo'
+        ref: 'Veiculo',
         required: true
     }
 }, {
-    // Adiciona os campos createdAt e updatedAt automaticamente
     timestamps: true
 });
 

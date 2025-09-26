@@ -1,16 +1,13 @@
 // models/veiculo.js
-
 const mongoose = require('mongoose');
 
 const veiculoSchema = new mongoose.Schema({
     placa: {
         type: String,
         required: [true, 'A placa é obrigatória.'],
-        unique: true, // Garante que não hajam duas placas iguais
         trim: true,
         uppercase: true,
-        // Validação simples para o formato Mercosul ou antigo
-        match: [/^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$/, 'Formato de placa inválido.'] 
+        match: [/^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$/, 'Formato de placa inválido.']
     },
     marca: {
         type: String,
@@ -32,10 +29,18 @@ const veiculoSchema = new mongoose.Schema({
         type: String,
         trim: true,
         default: 'Não informada'
+    },
+    owner: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
     }
 }, {
-    timestamps: true // Adiciona createdAt e updatedAt
+    timestamps: true
 });
+
+// Garante que a combinação de placa e dono seja única
+veiculoSchema.index({ placa: 1, owner: 1 }, { unique: true });
 
 const Veiculo = mongoose.model('Veiculo', veiculoSchema);
 

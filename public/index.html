@@ -8,113 +8,135 @@
 </head>
 <body>
     <main>
-        <!-- Menu de Navegação -->
+        <!-- Menu de Navegação Modificado -->
         <nav class="main-nav">
             <ul>
                 <li><a href="index.html" class="active">Página Inicial</a></li>
-                <li><a href="detalhes_carro.html">Carro</a></li>
-                <li><a href="detalhes_esportivo.html">Carro Esportivo</a></li>
-                <li><a href="detalhes_caminhao.html">Caminhão</a></li>
-                <li><a href="detalhes_moto.html">Moto</a></li>
+                <li style="display: none;" id="nav-link-carro"><a href="detalhes_carro.html">Carro</a></li>
+                <li style="display: none;" id="nav-link-esportivo"><a href="detalhes_esportivo.html">Carro Esportivo</a></li>
+                <li style="display: none;" id="nav-link-caminhao"><a href="detalhes_caminhao.html">Caminhão</a></li>
+                <li style="display: none;" id="nav-link-moto"><a href="detalhes_moto.html">Moto</a></li>
             </ul>
+            <div id="user-info-nav" style="display: none; align-items: center; gap: 15px; padding-right: 15px;">
+                <span id="user-email-display" style="color: white; font-weight: bold;"></span>
+                <button id="btn-logout">Sair</button>
+            </div>
         </nav>
 
         <h1>Garagem DreamHouse</h1>
         <p style="margin-top:-15px; margin-bottom: 25px;">Seu painel de controle automotivo!</p>
-        <img src="imagens/barbie_logo-removebg-preview.png" >
+        <img src="imagens/barbie_logo-removebg-preview.png" alt="Logo Barbie" style="max-width: 200px; height: auto;">
       
-        <section id="secao-veiculos-destaque" class="container">
-            <h2>Veículos na Garagem (Destaques)</h2>
-            <div id="cards-veiculos-destaque" class="cards-container"></div>
-        </section>
-        
-        <hr>
+        <!-- Seção de Autenticação -->
+        <section id="secao-autenticacao" class="container" style="display: none;">
+             <h2>Acesse sua Garagem</h2>
+             <div id="auth-error-message" style="display: none; color: red; margin-bottom: 15px; font-weight: bold;"></div>
+             
+             <form id="form-login" class="manutencao-form" style="max-width: 400px; margin: 10px auto;">
+                 <h4>Login</h4>
+                 <input type="email" id="login-email" placeholder="Seu e-mail" required>
+                 <input type="password" id="login-password" placeholder="Sua senha" required>
+                 <button type="submit">Entrar</button>
+             </form>
+             <p>Não tem uma conta? <a href="#" id="link-mostrar-registro" style="color: #e91e63; font-weight: bold;">Registre-se aqui</a>.</p>
 
-        <section id="secao-crud-veiculos" class="container">
-            <h2>Gerenciar Frota</h2>
-            <p>Adicione ou remova veículos da sua frota.</p>
+             <div id="container-registro" style="display:none;">
+                <hr>
+                <form id="form-register" class="manutencao-form" style="max-width: 400px; margin: 10px auto;">
+                    <h4>Crie sua Conta</h4>
+                    <input type="email" id="register-email" placeholder="Seu e-mail" required>
+                    <input type="password" id="register-password" placeholder="Crie uma senha" required>
+                    <button type="submit">Registrar</button>
+                </form>
+                <p>Já tem uma conta? <a href="#" id="link-mostrar-login" style="color: #e91e63; font-weight: bold;">Faça login</a>.</p>
+            </div>
+        </section>
+
+        <!-- Conteúdo Principal (Escondido até o login) -->
+        <div id="conteudo-principal" style="display: none;">
+            <section id="secao-veiculos-destaque" class="container">
+                <h2>Veículos na Garagem (Destaques)</h2>
+                <div id="cards-veiculos-destaque" class="cards-container"></div>
+            </section>
             
-            <form id="form-add-veiculo" class="manutencao-form" style="max-width: 600px; margin: 20px auto;">
-                <h4>Adicionar Novo Veículo</h4>
-                <div id="form-error-message" style="display: none; color: red; margin-bottom: 10px;"></div>
-                <input type="text" id="input-placa" placeholder="Placa (Ex: ABC1D23)" required>
-                <input type="text" id="input-marca" placeholder="Marca (Ex: Honda)" required>
-                <input type="text" id="input-modelo" placeholder="Modelo (Ex: Civic)" required>
-                <input type="number" id="input-ano" placeholder="Ano (Ex: 2021)" required>
-                <input type="text" id="input-cor" placeholder="Cor (Opcional)">
-                <button type="submit" id="btn-submit-veiculo">Adicionar Veículo</button>
-            </form>
+            <hr>
 
-            <div class="table-container" style="margin-top: 25px; overflow-x: auto;">
-                <table id="tabela-veiculos">
-                    <thead>
-                        <tr>
-                            <th>Placa</th><th>Marca</th><th>Modelo</th><th>Ano</th><th>Cor</th><th>Cadastrado em</th><th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tbody-veiculos"></tbody>
-                </table>
-            </div>
-        </section>
-
-        <hr>
-        
-        <section id="secao-servicos" class="container">
-            <h2>Nossos Serviços</h2>
-            <ul id="lista-servicos-oferecidos"></ul>
-        </section>
-
-        <hr>
-
-        <section class="container" id="secao-dicas-manutencao">
-            <h2>Dicas de Manutenção da Garagem</h2>
-            <div class="botoes"><button id="btn-buscar-dicas-gerais">Ver Dicas Gerais</button></div>
-            <div class="form-dicas-especificas">
-                <input type="text" id="input-tipo-veiculo" placeholder="Digite o tipo (carro, moto, etc)">
-                <button id="btn-buscar-dicas-especificas">Buscar Dicas Específicas</button>
-            </div>
-            <div id="dicas-resultado-container" class="dicas-container"><p>Clique nos botões acima para ver as dicas.</p></div>
-        </section>
-
-        <hr> 
-        
-        <!-- SEÇÃO DE CLIMA COMPLETA RESTAURADA -->
-        <section class="container" id="planejar-viagem-secao">
-            <h2>Planejar Viagem (Previsão do Tempo)</h2>
-            <div class="controles-previsao-topo">
-                <button id="alternar-unidade-temp-btn" class="btn-alternar-unidade">Mudar para °F</button>
-            </div>
-            <div class="form-previsao">
-                <input type="text" id="destino-viagem" placeholder="Digite a cidade de destino">
-                <div class="opcoes-previsao-dias">
-                    <span>Ver para:</span>
-                    <input type="radio" id="dias1" name="numDias" value="1" checked><label for="dias1">1 dia</label>
-                    <input type="radio" id="dias3" name="numDias" value="3"><label for="dias3">3 dias</label>
-                    <input type="radio" id="dias5" name="numDias" value="5"><label for="dias5">5 dias</label>
+            <section id="secao-crud-veiculos" class="container">
+                <h2>Gerenciar Frota</h2>
+                <p>Adicione ou remova veículos da sua frota.</p>
+                <form id="form-add-veiculo" class="manutencao-form" style="max-width: 600px; margin: 20px auto;">
+                    <h4>Adicionar Novo Veículo</h4>
+                    <div id="form-error-message" style="display: none; color: red; margin-bottom: 10px;"></div>
+                    <input type="text" id="input-placa" placeholder="Placa (Ex: ABC1D23)" required>
+                    <input type="text" id="input-marca" placeholder="Marca (Ex: Honda)" required>
+                    <input type="text" id="input-modelo" placeholder="Modelo (Ex: Civic)" required>
+                    <input type="number" id="input-ano" placeholder="Ano (Ex: 2021)" required>
+                    <input type="text" id="input-cor" placeholder="Cor (Opcional)">
+                    <button type="submit" id="btn-submit-veiculo">Adicionar Veículo</button>
+                </form>
+                <div class="table-container" style="margin-top: 25px; overflow-x: auto;">
+                    <table id="tabela-veiculos">
+                        <thead>
+                            <tr>
+                                <th>Placa</th><th>Marca</th><th>Modelo</th><th>Ano</th><th>Cor</th><th>Cadastrado em</th><th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-veiculos"></tbody>
+                    </table>
                 </div>
-                <button id="verificar-clima-btn">Verificar Clima</button>
-            </div>
-            <div class="filtros-destaque-previsao">
-                <h4>Destaques Visuais:</h4>
-                <label><input type="checkbox" id="destaque-chuva"> Destacar Chuva</label>
-                <label><input type="checkbox" id="destaque-temp-baixa-check"> Temp. Abaixo de:
-                    <input type="number" id="destaque-temp-baixa-valor" value="5" class="input-temp-destaque"> °C</label>
-                <label><input type="checkbox" id="destaque-temp-alta-check"> Temp. Acima de:
-                    <input type="number" id="destaque-temp-alta-valor" value="30" class="input-temp-destaque"> °C</label>
-            </div>
-            <div id="previsao-tempo-resultado" class="previsao-container"><p>Digite uma cidade, escolha o período e clique em "Verificar Clima".</p></div>
-        </section>
+            </section>
+
+            <hr>
+            
+            <section id="secao-servicos" class="container">
+                <h2>Nossos Serviços</h2>
+                <ul id="lista-servicos-oferecidos"></ul>
+            </section>
+
+            <hr>
+
+            <section class="container" id="secao-dicas-manutencao">
+                <h2>Dicas de Manutenção da Garagem</h2>
+                <div class="botoes"><button id="btn-buscar-dicas-gerais">Ver Dicas Gerais</button></div>
+                <div class="form-dicas-especificas">
+                    <input type="text" id="input-tipo-veiculo" placeholder="Digite o tipo (carro, moto, etc)">
+                    <button id="btn-buscar-dicas-especificas">Buscar Dicas Específicas</button>
+                </div>
+                <div id="dicas-resultado-container" class="dicas-container"><p>Clique nos botões acima para ver as dicas.</p></div>
+            </section>
+
+            <hr> 
+            
+            <section class="container" id="planejar-viagem-secao">
+                <h2>Planejar Viagem (Previsão do Tempo)</h2>
+                <div class="controles-previsao-topo">
+                    <button id="alternar-unidade-temp-btn" class="btn-alternar-unidade">Mudar para °F</button>
+                </div>
+                <div class="form-previsao">
+                    <input type="text" id="destino-viagem" placeholder="Digite a cidade de destino">
+                    <div class="opcoes-previsao-dias">
+                        <span>Ver para:</span>
+                        <input type="radio" id="dias1" name="numDias" value="1" checked><label for="dias1">1 dia</label>
+                        <input type="radio" id="dias3" name="numDias" value="3"><label for="dias3">3 dias</label>
+                        <input type="radio" id="dias5" name="numDias" value="5"><label for="dias5">5 dias</label>
+                    </div>
+                    <button id="verificar-clima-btn">Verificar Clima</button>
+                </div>
+                <div class="filtros-destaque-previsao">
+                    <h4>Destaques Visuais:</h4>
+                    <label><input type="checkbox" id="destaque-chuva"> Destacar Chuva</label>
+                    <label><input type="checkbox" id="destaque-temp-baixa-check"> Temp. Abaixo de:
+                        <input type="number" id="destaque-temp-baixa-valor" value="5" class="input-temp-destaque"> °C</label>
+                    <label><input type="checkbox" id="destaque-temp-alta-check"> Temp. Acima de:
+                        <input type="number" id="destaque-temp-alta-valor" value="30" class="input-temp-destaque"> °C</label>
+                </div>
+                <div id="previsao-tempo-resultado" class="previsao-container"><p>Digite uma cidade, escolha o período e clique em "Verificar Clima".</p></div>
+            </section>
+        </div>
     </main>
 
     <!-- Scripts -->
-    <script src="js/manutencao.js"></script>
-    <script src="js/veiculo.js"></script>
-    <script src="js/carro.js"></script>
-    <script src="js/carroEsportivo.js"></script>
-    <script src="js/caminhao.js"></script>
-    <script src="js/moto.js"></script>
-    <script src="js/garagem.js"></script>
+    <script src="js/auth.js"></script>
     <script src="js/main.js"></script>
-
 </body>
 </html>

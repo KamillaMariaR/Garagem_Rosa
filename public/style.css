@@ -1056,6 +1056,7 @@ nav.main-nav a:hover, nav.main-nav a.active {
     box-sizing: border-box; /* Garante que o padding não quebre o layout */
     margin-bottom: 15px; /* Espaço entre os campos */
     transition: all 0.2s ease-in-out;
+     color: #880e4f;
 }
 
 /* 4. Efeito de foco mais suave e moderno para os inputs */

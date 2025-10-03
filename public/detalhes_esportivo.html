@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
     <title>Detalhes do Carro Esportivo - Garagem Interativa</title>
+    <script src="js/theme.js"></script> 
 </head>
 <body>
     <main>
@@ -12,11 +13,20 @@
         <nav class="main-nav">
             <ul>
                 <li><a href="index.html">Página Inicial</a></li>
-                <li><a href="detalhes_carro.html">Carro</a></li>
-                <li><a href="detalhes_esportivo.html" class="active">Carro Esportivo</a></li>
+                <li><a href="detalhes_carro.html" class="active">Carro</a></li> <!-- <== active aqui -->
+                <li><a href="detalhes_esportivo.html">Carro Esportivo</a></li>
                 <li><a href="detalhes_caminhao.html">Caminhão</a></li>
                 <li><a href="detalhes_moto.html">Moto</a></li>
             </ul>
+            
+            <!-- Adicionei esta seção aqui também para consistência -->
+            <div id="user-info-nav" style="display: none; align-items: center; gap: 15px; padding-right: 15px;">
+                <span id="user-email-display" style="color: white; font-weight: bold;"></span>
+                <button id="btn-logout">Sair</button>
+            </div>
+
+            <!-- Botão de Troca de Tema -->
+            <button id="btn-theme-switcher" title="Mudar tema">🌙</button>
         </nav>
         
         <h1>Detalhes do Carro Esportivo</h1>

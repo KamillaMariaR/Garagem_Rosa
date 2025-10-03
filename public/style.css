@@ -1280,32 +1280,46 @@ nav.main-nav ul {
     nav.main-nav {
         gap: 10px; /* Diminui o espaçamento geral */
     }
-}
-
-/* 
+}/* 
    ========================================================================
    === ✨ CORREÇÃO DEFINITIVA E FINAL PARA LAYOUT E TEMA ESCURO ✨ ===
    ========================================================================
 */
 
-/* 1. Estilo da nova Barra de Informações do Usuário */
+/* 
+   ========================================================================
+   === ✨ CORREÇÃO FINAL E À PROVA DE FALHAS PARA A BARRA DE USUÁRIO ✨ ===
+   ========================================================================
+*/
+
+/* 1. Estilo da Barra de Informações do Usuário (Tema Claro) */
 #user-info-bar {
     display: flex;
     justify-content: flex-end;
     align-items: center;
     gap: 15px;
     padding: 8px 15px;
-    background-color: #fce4ec; /* Um rosa bem clarinho */
-    margin: -15px auto 20px auto; /* Margem para "conectar" com o conteúdo */
+    background-color: #fce4ec; /* Rosa clarinho */
+    margin: -15px auto 20px auto;
     max-width: 950px;
     width: 90%;
-    border-radius: 0 0 8px 8px; /* Cantos arredondados só embaixo */
+    border-radius: 0 0 8px 8px;
     box-sizing: border-box;
 }
 
 #user-info-bar #user-email-display {
-    color: #c2185b; /* Texto em rosa escuro para contraste */
+    /* A MÁGICA ESTÁ AQUI: !important força esta cor a ser usada */
+    color: #c2185b !important; /* Rosa escuro para contraste no tema claro */
     font-weight: 500;
+}
+
+/* 2. Estilo da Barra de Informações do Usuário (Tema Escuro) */
+body.dark-theme #user-info-bar {
+    background-color: #381b26; /* Fundo rosa bem escuro */
+}
+body.dark-theme #user-info-bar #user-email-display {
+    /* Garantindo a cor certa no tema escuro também */
+    color: #f48fb1 !important; /* Rosa claro no tema escuro */
 }
 
 /* 2. Simplificando a barra de navegação principal (NAV) */

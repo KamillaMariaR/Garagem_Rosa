@@ -1,18 +1,5 @@
-/* 
-   ================================================
-   === ARQUIVO STYLE.CSS ATUALIZADO E MELHORADO ===
-   ================================================
-   As mudanças principais estão no final, na seção 
-   de "ESTILOS NOVOS PARA LOGIN". O resto do código
-   foi mantido para garantir que nada quebre.
-*/
-
 body {
-    /* DICA OPCIONAL: Para uma fonte mais moderna, adicione a linha abaixo no <head> do seu index.html:
-       <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
-       E depois, descomente a linha abaixo (remova o /* e */) para usar a nova fonte. */
-    /* font-family: 'Poppins', sans-serif; */
-    font-family: sans-serif;
+    font-family: 'Poppins', sans-serif; 
     text-align: center;
     background-image: url(imagens/barbie-fundo.jpg);
     background-repeat: repeat;
@@ -1125,4 +1112,120 @@ nav.main-nav a:hover, nav.main-nav a.active {
     padding: 12px;
     border-radius: 8px;
     font-weight: 500;
+}
+
+/* 1. Estilo do botão de troca de tema */
+#btn-theme-switcher {
+    background-color: transparent;
+    border: 2px solid #fff0f5;
+    color: #fff0f5;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 1.2em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-right: 15px;
+    padding: 0;
+    line-height: 1;
+}
+
+#btn-theme-switcher:hover {
+    background-color: #e91e63;
+    transform: rotate(15deg) scale(1.1);
+}
+
+
+/* 2. Estilos que são aplicados quando o <body> tem a classe "dark-theme" */
+
+body.dark-theme {
+    background-image: none; /* Remove a imagem de fundo */
+    background-color: #121212; /* Cor de fundo principal, um cinza bem escuro */
+    color: #e0e0e0; /* Cor de texto principal, um branco suave */
+}
+
+body.dark-theme main {
+    background-color: #1e1e1e; /* Cor do container principal, um pouco mais clara */
+    border-color: #c2185b; /* Borda rosa escura para contraste */
+    box-shadow: 0 4px 15px rgba(233, 30, 99, 0.1); /* Sombra rosa sutil */
+}
+
+body.dark-theme section.container {
+    background-color: #2a2a2a; /* Cor dos containers de seção */
+    border-color: #444; /* Borda cinza escura */
+}
+
+body.dark-theme h1,
+body.dark-theme h2,
+body.dark-theme h4 {
+    color: #f48fb1; /* Títulos em um rosa mais claro para ler melhor */
+    border-bottom-color: #c2185b;
+}
+
+body.dark-theme hr {
+    background-image: linear-gradient(to right, rgba(194, 24, 91, 0), rgba(194, 24, 91, 0.75), rgba(194, 24, 91, 0));
+}
+
+/* Formulários e Inputs no Tema Escuro */
+body.dark-theme input[type="text"],
+body.dark-theme input[type="number"],
+body.dark-theme input[type="date"],
+body.dark-theme input[type="time"],
+body.dark-theme input[type="email"],
+body.dark-theme input[type="password"] {
+    background-color: #333;
+    border-color: #555;
+    color: #e0e0e0;
+}
+
+body.dark-theme input:focus {
+    border-color: #e91e63 !important;
+    box-shadow: 0 0 0 3px rgba(233, 30, 99, 0.3) !important;
+}
+
+/* Seção de login no tema escuro */
+body.dark-theme #secao-autenticacao {
+    background-color: #1e1e1e;
+    border-color: #c2185b;
+    box-shadow: 0 8px 20px rgba(233, 30, 99, 0.1);
+}
+
+body.dark-theme #secao-autenticacao p {
+    color: #bbb;
+}
+
+/* Tabelas no Tema Escuro */
+body.dark-theme #tabela-veiculos th {
+    background-color: #3a222c;
+    color: #f48fb1;
+}
+
+body.dark-theme #tabela-veiculos td {
+    border-color: #444;
+}
+
+body.dark-theme #tabela-veiculos tbody tr:nth-child(even) {
+    background-color: #242424;
+}
+
+body.dark-theme #tabela-veiculos tbody tr:hover {
+    background-color: #381b26;
+}
+
+/* Cards de Veículos no Tema Escuro */
+body.dark-theme .veiculo-card {
+    background-color: #2a2a2a;
+    border-color: #555;
+}
+
+body.dark-theme .veiculo-card:hover {
+     box-shadow: 0 4px 10px rgba(233, 30, 99, 0.15);
+}
+
+body.dark-theme .veiculo-card h3 {
+    color: #f48fb1;
+}
+
+body.dark-theme .veiculo-card p {
+    color: #ccc;
 }

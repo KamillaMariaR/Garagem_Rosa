@@ -1281,3 +1281,101 @@ nav.main-nav ul {
         gap: 10px; /* Diminui o espaçamento geral */
     }
 }
+
+/* 
+   ========================================================================
+   === ✨ CORREÇÃO DEFINITIVA E FINAL PARA LAYOUT E TEMA ESCURO ✨ ===
+   ========================================================================
+*/
+
+/* 1. Estilo da nova Barra de Informações do Usuário */
+#user-info-bar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 15px;
+    padding: 8px 15px;
+    background-color: #fce4ec; /* Um rosa bem clarinho */
+    margin: -15px auto 20px auto; /* Margem para "conectar" com o conteúdo */
+    max-width: 950px;
+    width: 90%;
+    border-radius: 0 0 8px 8px; /* Cantos arredondados só embaixo */
+    box-sizing: border-box;
+}
+
+#user-info-bar #user-email-display {
+    color: #c2185b; /* Texto em rosa escuro para contraste */
+    font-weight: 500;
+}
+
+/* 2. Simplificando a barra de navegação principal (NAV) */
+nav.main-nav {
+    justify-content: space-between; /* Garante que os links fiquem de um lado e o botão de tema do outro */
+}
+nav.main-nav ul {
+    flex-grow: 0; /* Remove a regra que estava causando problemas */
+}
+
+
+/* 
+   =========================================================
+   === REFAZENDO AS CORREÇÕES DO TEMA ESCURO (AGORA VAI!) ===
+   =========================================================
+*/
+
+/* Corrigindo a nova barra de usuário no tema escuro */
+body.dark-theme #user-info-bar {
+    background-color: #381b26; /* Um fundo rosa bem escuro */
+}
+body.dark-theme #user-info-bar #user-email-display {
+    color: #f48fb1; /* Texto em rosa claro */
+}
+
+/* Deixando a seção "Nossos Serviços" legível */
+body.dark-theme #lista-servicos-oferecidos li {
+    background-color: #333;
+    border-left-color: #e91e63;
+}
+body.dark-theme #lista-servicos-oferecidos li strong {
+    color: #f48fb1;
+}
+body.dark-theme #lista-servicos-oferecidos li span {
+    color: #bbb;
+}
+
+/* Corrigindo a seção "Dicas de Manutenção" */
+body.dark-theme .dicas-container {
+    background-color: #2f2a33;
+    border-color: #673ab7;
+    color: #e0e0e0;
+}
+body.dark-theme #input-tipo-veiculo::placeholder {
+    color: #888;
+}
+body.dark-theme .dicas-container p {
+    color: #ccc !important; /* Força a cor do texto placeholder */
+}
+
+
+/* Arrumando a seção "Planejar Viagem" */
+body.dark-theme .opcoes-previsao-dias span,
+body.dark-theme .opcoes-previsao-dias label {
+    color: #e0e0e0;
+}
+body.dark-theme .filtros-destaque-previsao {
+    background-color: #2a2a2a;
+    border-color: #444;
+}
+body.dark-theme .filtros-destaque-previsao h4 {
+    color: #f48fb1;
+}
+body.dark-theme .filtros-destaque-previsao label {
+    color: #e0e0e0;
+}
+body.dark-theme .previsao-container {
+    background-color: #242b25;
+    border-color: #4caf50;
+}
+body.dark-theme .previsao-container p {
+    color: #ccc !important; /* Força a cor do texto placeholder */
+}

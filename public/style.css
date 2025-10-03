@@ -1229,3 +1229,76 @@ body.dark-theme .veiculo-card h3 {
 body.dark-theme .veiculo-card p {
     color: #ccc;
 }
+/* 
+   ===========================================================
+   === ✨ CORREÇÕES PARA O TEMA ESCURO NA PÁGINA INICIAL ✨ ===
+   ===========================================================
+*/
+
+/* 1. Consertando o alinhamento da barra de navegação (NAV) */
+nav.main-nav ul {
+    flex-grow: 1; /* Faz a lista de links ocupar o espaço vago, empurrando o resto para a direita */
+}
+
+/* Garante que o container de usuário (email/sair) não tenha fundo no tema escuro */
+body.dark-theme #user-info-nav {
+    background-color: transparent !important;
+}
+
+
+/* 2. Deixando a seção "Nossos Serviços" legível */
+body.dark-theme #lista-servicos-oferecidos li {
+    background-color: #333; /* Fundo escuro para os itens da lista */
+    border-left-color: #e91e63; /* Borda rosa continua linda */
+}
+
+body.dark-theme #lista-servicos-oferecidos li strong {
+    color: #f48fb1; /* Título do serviço em rosa claro */
+}
+
+body.dark-theme #lista-servicos-oferecidos li span {
+    color: #bbb; /* Descrição em cinza claro, para diferenciar */
+}
+
+
+/* 3. Corrigindo a seção "Dicas de Manutenção" */
+body.dark-theme .dicas-container {
+    background-color: #2f2a33; /* Um roxo bem escuro, combinando com a borda */
+    border-color: #673ab7;
+    color: #e0e0e0; /* Cor do texto dentro do container */
+}
+
+body.dark-theme #input-tipo-veiculo::placeholder {
+    color: #888; /* Deixa o texto do placeholder mais claro */
+}
+
+
+/* 4. Arrumando a seção "Planejar Viagem" */
+
+/* Textos dos botões de rádio (1 dia, 3 dias...) */
+body.dark-theme .opcoes-previsao-dias span,
+body.dark-theme .opcoes-previsao-dias label {
+    color: #e0e0e0;
+}
+
+/* Container de "Destaques Visuais" */
+body.dark-theme .filtros-destaque-previsao {
+    background-color: #2a2a2a; /* Fundo escuro */
+    border-color: #444;
+}
+
+body.dark-theme .filtros-destaque-previsao h4 {
+    color: #f48fb1; /* Título rosa claro */
+}
+
+body.dark-theme .filtros-destaque-previsao label {
+    color: #e0e0e0; /* Texto dos checkboxes */
+}
+
+/* Container de resultado da previsão */
+body.dark-theme .previsao-container {
+    background-color: #242b25; /* Um verde bem escuro, combinando com a borda */
+    border-color: #4caf50;
+    color: #e0e0e0; /* Texto padrão "Digite uma cidade..." */
+}
+

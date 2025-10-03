@@ -1,15 +1,14 @@
-// js/main.js
-document.addEventListener('DOMContentLoaded', () => {
-    console.log("DOM carregado. Iniciando script principal...");
+// js/main.js (VERSÃO SIMPLIFICADA)
+// A lógica de mostrar/esconder o menu foi movida para o theme.js
 
-    // === SELETORES DE ELEMENTOS ===
+document.addEventListener('DOMContentLoaded', () => {
+    console.log("DOM carregado. Iniciando script principal (index)...");
+
+    // === SELETORES DE ELEMENTOS DA PÁGINA INICIAL ===
     const secaoAuth = document.getElementById('secao-autenticacao');
     const conteudoPrincipal = document.getElementById('conteudo-principal');
-    const userInfoNav = document.getElementById('user-info-nav');
-    const userEmailDisplay = document.getElementById('user-email-display');
     const formLogin = document.getElementById('form-login');
     const formRegister = document.getElementById('form-register');
-    const btnLogout = document.getElementById('btn-logout');
     const linkMostrarRegistro = document.getElementById('link-mostrar-registro');
     const linkMostrarLogin = document.getElementById('link-mostrar-login');
     const containerRegistro = document.getElementById('container-registro');
@@ -25,26 +24,20 @@ document.addEventListener('DOMContentLoaded', () => {
     // === LÓGICA DE CONTROLE DA UI (LOGIN/LOGOUT) ===
     // =============================================================
 
-    function updateUIForAuthState() {
+    function showAuthError(message) {
+        authErrorMessage.textContent = message;
+        authErrorMessage.style.display = 'block';
+    }
+
+    // Função que mostra o conteúdo certo após o login
+    function mostrarConteudoLogado() {
         if (isLoggedIn()) {
             secaoAuth.style.display = 'none';
             conteudoPrincipal.style.display = 'block';
-            userInfoNav.style.display = 'flex';
-            userEmailDisplay.textContent = getUserEmail();
-            document.getElementById('nav-link-carro').style.display = 'list-item';
-            document.getElementById('nav-link-esportivo').style.display = 'list-item';
-            document.getElementById('nav-link-caminhao').style.display = 'list-item';
-            document.getElementById('nav-link-moto').style.display = 'list-item';
             carregarDadosLogado();
         } else {
-            secaoAuth.style.display = 'block';
-            conteudoPrincipal.style.display = 'none';
-            userInfoNav.style.display = 'none';
-            userEmailDisplay.textContent = '';
-            document.getElementById('nav-link-carro').style.display = 'none';
-            document.getElementById('nav-link-esportivo').style.display = 'none';
-            document.getElementById('nav-link-caminhao').style.display = 'none';
-            document.getElementById('nav-link-moto').style.display = 'none';
+             secaoAuth.style.display = 'block';
+             conteudoPrincipal.style.display = 'none';
         }
     }
     
@@ -54,11 +47,6 @@ document.addEventListener('DOMContentLoaded', () => {
         carregarServicos();
     }
     
-    function showAuthError(message) {
-        authErrorMessage.textContent = message;
-        authErrorMessage.style.display = 'block';
-    }
-
     // =============================================================
     // === EVENT LISTENERS DE AUTENTICAÇÃO ===
     // =============================================================
@@ -77,7 +65,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             if (!response.ok) throw new Error(data.error || 'Erro desconhecido.');
             saveAuthData(data.token, data.email);
-            updateUIForAuthState();
+            
+            // ATUALIZADO: Agora apenas recarrega a página. O theme.js vai cuidar do resto.
+            window.location.reload(); 
         } catch (error) {
             showAuthError(`Falha no login: ${error.message}`);
         }
@@ -104,11 +94,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    btnLogout.addEventListener('click', () => {
-        clearAuthData();
-        updateUIForAuthState();
-    });
-
     linkMostrarRegistro.addEventListener('click', (e) => {
         e.preventDefault();
         formLogin.style.display = 'none';
@@ -123,6 +108,9 @@ document.addEventListener('DOMContentLoaded', () => {
         showAuthError('');
     });
 
+    // O resto do seu código de CRUD e APIs continua aqui...
+    // (O código abaixo é o mesmo de antes e não precisa ser alterado)
+    
     // =============================================================
     // === SEÇÃO DE VEÍCULOS (CRUD) ===
     // =============================================================
@@ -479,5 +467,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- INICIALIZAÇÃO DA PÁGINA ---
-    updateUIForAuthState();
+    // A função no theme.js vai cuidar de mostrar o conteúdo certo na hora certa.
+    mostrarConteudoLogado();
 });

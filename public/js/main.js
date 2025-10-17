@@ -7,6 +7,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // === SELETORES DE ELEMENTOS DA PÁGINA INICIAL ===
     const secaoAuth = document.getElementById('secao-autenticacao');
     const conteudoPrincipal = document.getElementById('conteudo-principal');
+    const userInfoBar = document.getElementById('user-info-bar'); // A barra com o e-mail e botão sair
+    const userEmailDisplay = document.getElementById('user-email-display');
     const formLogin = document.getElementById('form-login');
     const formRegister = document.getElementById('form-register');
     const linkMostrarRegistro = document.getElementById('link-mostrar-registro');
@@ -15,6 +17,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const authErrorMessage = document.getElementById('auth-error-message');
     const formVeiculo = document.getElementById('form-add-veiculo');
     const btnSubmit = document.getElementById('btn-submit-veiculo');
+   
+
     
     let modoEdicao = { ativo: false, veiculoId: null };
     let dadosPrevisaoGlobal = null;
@@ -23,11 +27,48 @@ document.addEventListener('DOMContentLoaded', () => {
     // =============================================================
     // === LÓGICA DE CONTROLE DA UI (LOGIN/LOGOUT) ===
     // =============================================================
+function showAuthError(message) {
+    authErrorMessage.textContent = message;
+    authErrorMessage.style.display = 'block';
+}
+function checkAuthState() {
+    // Se o usuário estiver logado...
+    if (isLoggedIn()) {
+        // 1. Esconde os formulários de login/registro
+        secaoAuth.style.display = 'none';
 
-    function showAuthError(message) {
-        authErrorMessage.textContent = message;
-        authErrorMessage.style.display = 'block';
+        // 2. Mostra o conteúdo principal da garagem
+        conteudoPrincipal.style.display = 'block';
+        
+        // 3. Mostra a barra de usuário com o e-mail e botão "Sair"
+        userInfoBar.style.display = 'flex';
+        userEmailDisplay.textContent = getUserEmail(); // Pega o e-mail do localStorage
+
+        // 4. Carrega os dados que só usuários logados podem ver
+        carregarDadosLogado();
+
+    } 
+    // Se o usuário NÃO estiver logado...
+    else {
+        // 1. Mostra os formulários de login/registro
+        secaoAuth.style.display = 'block';
+
+        // 2. Esconde o conteúdo principal da garagem
+        conteudoPrincipal.style.display = 'none';
+        
+        // 3. Esconde a barra de usuário
+        userInfoBar.style.display = 'none';
+
+        // 4. Exibe uma mensagem de boas-vindas (opcional, o próprio formulário já faz isso)
+        console.log("Bem-vindo, visitante! Por favor, faça login ou registre-se.");
     }
+}
+
+function carregarDadosLogado() {
+    buscarEExibirVeiculosNaTabela();
+    carregarVeiculosDestaque();
+    carregarServicos();
+}
 
     // Função que mostra o conteúdo certo após o login
     function mostrarConteudoLogado() {
@@ -116,35 +157,59 @@ document.addEventListener('DOMContentLoaded', () => {
     // =============================================================
 
     async function buscarEExibirVeiculosNaTabela() {
-        const tbody = document.getElementById('tbody-veiculos');
-        if (!tbody) return;
-        tbody.innerHTML = `<tr><td colspan="7">Carregando sua frota...</td></tr>`;
-        try {
-            const response = await fetchWithAuth(`${backendUrl}/api/veiculos`);
-            if (!response.ok) throw new Error('Falha ao buscar veículos do servidor.');
-            const veiculos = await response.json();
-            if (veiculos.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7">Nenhum veículo cadastrado.</td></tr>`;
-                return;
-            }
-            tbody.innerHTML = veiculos.map(v => `
-                <tr id="veiculo-${v._id}">
-                    <td>${v.placa}</td>
-                    <td>${v.marca}</td>
-                    <td>${v.modelo}</td>
-                    <td>${v.ano}</td>
-                    <td>${v.cor || 'N/A'}</td>
-                    <td>${new Date(v.createdAt).toLocaleDateString('pt-BR')}</td>
-                    <td>
-                        <button class="btn-edit" data-id="${v._id}">Editar</button>
-                        <button class="btn-delete" data-id="${v._id}" data-placa="${v.placa}">Deletar</button>
-                    </td>
-                </tr>
-            `).join('');
-        } catch (error) {
-            tbody.innerHTML = `<tr><td colspan="7" class="error">${error.message}</td></tr>`;
+    const tbody = document.getElementById('tbody-veiculos');
+    if (!tbody) return;
+    tbody.innerHTML = `<tr><td colspan="7">Carregando sua frota...</td></tr>`;
+    try {
+        const response = await fetchWithAuth(`${backendUrl}/api/veiculos`);
+        if (!response.ok) throw new Error('Falha ao buscar veículos do servidor.');
+        
+        const veiculos = await response.json();
+        const currentUserEmail = getUserEmail(); // Pega o e-mail do usuário logado
+
+        if (veiculos.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7">Nenhum veículo cadastrado ou compartilhado com você.</td></tr>`;
+            return;
         }
+        
+        tbody.innerHTML = veiculos.map(v => {
+            // Lógica para determinar se o veículo é compartilhado
+            const isOwner = v.owner?.email === currentUserEmail; // O "?" (optional chaining) previne erros
+const ownerEmail = v.owner?.email || 'dono desconhecido'; // Define um texto padrão
+
+let sharedInfo = '';
+let actionButtons = '';
+
+if (isOwner) {
+    // Se for o dono, mostra os botões...
+    actionButtons = `
+        <button class="btn-edit" data-id="${v._id}">Editar</button>
+        <button class="btn-delete" data-id="${v._id}" data-placa="${v.placa}">Deletar</button>
+        <button class="btn-share" data-id="${v._id}" data-placa="${v.placa}">Compartilhar</button>
+    `;
+} else {
+    // Se for compartilhado, mostra de quem é
+    sharedInfo = `<br><small class="shared-info">(Compartilhado por ${ownerEmail})</small>`;
+}
+
+// E certifique-se que o 'return' da função map use as variáveis corretas:
+return `
+    <tr id="veiculo-${v._id}">
+        <td>${v.placa}</td>
+        <td>${v.marca}</td>
+        <td>${v.modelo} ${sharedInfo}</td>
+        <td>${v.ano}</td>
+        <td>${v.cor || 'N/A'}</td>
+        <td>${new Date(v.createdAt).toLocaleDateString('pt-BR')}</td>
+        <td>${actionButtons}</td>
+    </tr>
+`;
+        }).join('');
+
+    } catch (error) {
+        tbody.innerHTML = `<tr><td colspan="7" class="error">${error.message}</td></tr>`;
     }
+}
 
     function handleIniciarEdicao(id) {
         const linhaVeiculo = document.getElementById(`veiculo-${id}`);
@@ -259,7 +324,49 @@ document.addEventListener('DOMContentLoaded', () => {
             alert(`Erro: ${error.message}`);
         }
     }
-    
+    async function handleShareVeiculo(id, placa) {
+    const email = prompt(`Com qual e-mail você deseja compartilhar o veículo de placa ${placa}?`);
+    if (!email) {
+        alert("Compartilhamento cancelado.");
+        return;
+    }
+
+    try {
+        const response = await fetchWithAuth(`${backendUrl}/api/veiculos/${id}/share`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email.trim() })
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.error || 'Não foi possível compartilhar o veículo.');
+        }
+
+        alert(data.message);
+        // Não precisa recarregar a tabela, pois a lista do dono não muda.
+        // Um feedback visual de sucesso seria um bom aprimoramento futuro.
+
+    } catch (error) {
+        alert(`Erro ao compartilhar: ${error.message}`);
+    }
+}
+
+
+// ... (encontre o listener abaixo e adicione o novo 'if')
+document.getElementById('tbody-veiculos')?.addEventListener('click', (event) => {
+    const target = event.target;
+    if (target.classList.contains('btn-delete')) {
+        handleDeletarVeiculo(target.dataset.id, target.dataset.placa);
+    }
+    if (target.classList.contains('btn-edit')) {
+        handleIniciarEdicao(target.dataset.id);
+    }
+    // ✨ ADICIONAR ESTE BLOCO ✨
+    if (target.classList.contains('btn-share')) {
+        handleShareVeiculo(target.dataset.id, target.dataset.placa);
+    }
+});
     formVeiculo?.addEventListener('submit', (event) => {
         if (modoEdicao.ativo) {
             handleSalvarEdicao(event);
@@ -468,5 +575,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- INICIALIZAÇÃO DA PÁGINA ---
     // A função no theme.js vai cuidar de mostrar o conteúdo certo na hora certa.
-    mostrarConteudoLogado();
+   checkAuthState();
 });

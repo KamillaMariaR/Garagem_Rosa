@@ -1,4 +1,5 @@
 // models/veiculo.js
+
 const mongoose = require('mongoose');
 
 const veiculoSchema = new mongoose.Schema({
@@ -32,16 +33,20 @@ const veiculoSchema = new mongoose.Schema({
     },
     owner: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
+        ref: 'User', // A string aqui DEVE ser 'User' com 'U' maiúsculo
         required: true
-    }
+    },
+    sharedWith: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User' // E aqui também
+    }]
 }, {
     timestamps: true
 });
 
-// Garante que a combinação de placa e dono seja única
 veiculoSchema.index({ placa: 1, owner: 1 }, { unique: true });
 
+// A única coisa que este arquivo faz é definir e exportar o modelo 'Veiculo'
 const Veiculo = mongoose.model('Veiculo', veiculoSchema);
 
 module.exports = Veiculo;

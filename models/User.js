@@ -1,4 +1,5 @@
 // models/User.js
+
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
@@ -17,6 +18,7 @@ const userSchema = new mongoose.Schema({
     timestamps: true
 });
 
+// A única coisa que este arquivo faz é definir e exportar o modelo 'User'
 const User = mongoose.model('User', userSchema);
 
 module.exports = User;

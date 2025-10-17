@@ -5,6 +5,7 @@
  * Depende: Manutencao (deve ser carregado antes)
  * Interage com: garagem (variável global)
  */
+
 class Veiculo {
     /**
      * Cria uma instância de Veiculo.

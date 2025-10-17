@@ -1,4 +1,4 @@
-// server.js (Versão Final com AUTENTICAÇÃO e PERMISSÃO PARA IMAGENS DO CLIMA)
+// server.js (VERSÃO FINAL, COMPLETA E CORRIGIDA)
 
 const express = require('express');
 const cors = require('cors');
@@ -13,10 +13,10 @@ require('dotenv').config();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-// Models e Middleware
+// Models e Middleware (NA ORDEM CORRETA PARA O .populate() FUNCIONAR)
+const User = require('./models/User.js');
 const Veiculo = require('./models/veiculo.js');
 const Manutencao = require('./models/Manutencao.js');
-const User = require('./models/User.js');
 const authMiddleware = require('./middleware/auth.js');
 
 const app = express();
@@ -29,50 +29,26 @@ app.use(
       directives: {
         ...helmet.contentSecurityPolicy.getDefaultDirectives(),
         "connect-src": ["'self'", "https://garagem-interativa-1.onrender.com", "http://localhost:3001", "http://api.openweathermap.org"],
-        // <-- CORRIGIDO: Adicionada permissão para carregar imagens do OpenWeatherMap
         "img-src": ["'self'", "data:", "https://openweathermap.org"],
       },
     },
   })
 );
-
 app.use(cors());
-app.use(express.json()); // Middleware para parsear JSON
+app.use(express.json());
 
 // Limitadores de requisição
-const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 200,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: 'Muitas requisições enviadas deste IP, por favor, tente novamente mais tarde.'
-});
+const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 200, standardHeaders: true, legacyHeaders: false });
 app.use(limiter);
-
-const createVehicleLimiter = rateLimit({
-    windowMs: 60 * 60 * 1000,
-    max: 10,
-    message: 'Você atingiu o limite de criação de veículos. Tente novamente mais tarde.',
-});
-
-const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 15, 
-    message: 'Muitas tentativas de autenticação. Tente novamente mais tarde.',
-});
+const createVehicleLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 10, message: 'Você atingiu o limite de criação de veículos.' });
+const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 15, message: 'Muitas tentativas de autenticação.' });
 
 // --- CONEXÃO COM O BANCO DE DADOS ---
 const connectDB = async () => {
     try {
         const mongoUri = process.env.MONGO_URI;
-        if (!mongoUri) {
-            console.error("ERRO FATAL: Variável MONGO_URI não definida! Verifique seu .env");
-            process.exit(1);
-        }
-        if (!process.env.JWT_SECRET) {
-            console.error("ERRO FATAL: Variável JWT_SECRET não definida! Verifique seu .env");
-            process.exit(1);
-        }
+        if (!mongoUri) throw new Error("ERRO FATAL: Variável MONGO_URI não definida!");
+        if (!process.env.JWT_SECRET) throw new Error("ERRO FATAL: Variável JWT_SECRET não definida!");
         await mongoose.connect(mongoUri);
         console.log("🚀 Conectado ao MongoDB Atlas!");
     } catch (err) {
@@ -82,23 +58,18 @@ const connectDB = async () => {
 };
 
 // ==========================================================
-// === DEFINIÇÃO DAS ROTAS DA API (ANTES DOS ARQUIVOS ESTÁTICOS) ===
+// === DEFINIÇÃO DAS ROTAS DA API ===
 // ==========================================================
 
 // --- ROTAS DE AUTENTICAÇÃO ---
 app.post('/api/auth/register', authLimiter, async (req, res) => {
     try {
         const { email, password } = req.body;
-        if (!email || !password) {
-            return res.status(400).json({ error: 'E-mail e senha são obrigatórios.' });
-        }
-        let user = await User.findOne({ email });
-        if (user) {
-            return res.status(400).json({ error: 'Usuário com este e-mail já existe.' });
-        }
+        if (!email || !password) return res.status(400).json({ error: 'E-mail e senha são obrigatórios.' });
+        if (await User.findOne({ email })) return res.status(400).json({ error: 'Usuário com este e-mail já existe.' });
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
-        user = new User({ email, password: hashedPassword });
+        const user = new User({ email, password: hashedPassword });
         await user.save();
         res.status(201).json({ message: 'Usuário registrado com sucesso!' });
     } catch (e) {
@@ -110,15 +81,9 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
 app.post('/api/auth/login', authLimiter, async (req, res) => {
     try {
         const { email, password } = req.body;
-        if (!email || !password) {
-            return res.status(400).json({ error: 'E-mail e senha são obrigatórios.' });
-        }
+        if (!email || !password) return res.status(400).json({ error: 'E-mail e senha são obrigatórios.' });
         const user = await User.findOne({ email });
-        if (!user) {
-            return res.status(400).json({ error: 'Credenciais inválidas.' });
-        }
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
+        if (!user || !(await bcrypt.compare(password, user.password))) {
             return res.status(400).json({ error: 'Credenciais inválidas.' });
         }
         const payload = { userId: user.id };
@@ -136,39 +101,39 @@ app.post('/api/veiculos', authMiddleware, createVehicleLimiter, async (req, res)
         const v = await Veiculo.create({ ...req.body, owner: req.userId });
         res.status(201).json(v);
     } catch (e) {
-        if (e.code === 11000) {
-            return res.status(400).json({ error: 'Você já possui um veículo com esta placa.' });
-        }
+        if (e.code === 11000) return res.status(400).json({ error: 'Você já possui um veículo com esta placa.' });
         res.status(400).json({ error: e.message });
     }
 });
 
+// Rota de listagem de veículos CORRIGIDA E ÚNICA
 app.get('/api/veiculos', authMiddleware, async (req, res) => {
     try {
-        const v = await Veiculo.find({ owner: req.userId }).sort({ createdAt: -1 });
-        res.json(v);
+        const veiculos = await Veiculo.find({
+            $or: [
+                { owner: req.userId },       // Veículos que eu possuo
+                { sharedWith: req.userId }   // Veículos compartilhados comigo
+            ]
+        })
+        .populate('owner', 'email') // Traz o e-mail do dono
+        .sort({ createdAt: -1 });
+
+        res.json(veiculos);
     } catch (e) {
+        console.error("Erro ao listar veículos:", e.message);
         res.status(500).json({ error: e.message });
     }
 });
 
 app.put('/api/veiculos/:id', authMiddleware, async (req, res) => {
     try {
-        const { marca, modelo, ano, cor, placa } = req.body;
-        const dadosParaAtualizar = { marca, modelo, ano, cor, placa };
         const veiculo = await Veiculo.findById(req.params.id);
-        if (!veiculo) {
-            return res.status(404).json({ error: 'Veículo não encontrado.' });
-        }
-        if (veiculo.owner.toString() !== req.userId) {
-            return res.status(403).json({ error: 'Acesso negado. Você não é o proprietário deste veículo.' });
-        }
-        const v = await Veiculo.findByIdAndUpdate(req.params.id, dadosParaAtualizar, { new: true, runValidators: true });
+        if (!veiculo) return res.status(404).json({ error: 'Veículo não encontrado.' });
+        if (veiculo.owner.toString() !== req.userId) return res.status(403).json({ error: 'Acesso negado.' });
+        const v = await Veiculo.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
         res.json(v);
     } catch (e) {
-        if (e.code === 11000) {
-            return res.status(400).json({ error: 'Você já possui um veículo com esta placa.' });
-        }
+        if (e.code === 11000) return res.status(400).json({ error: 'Você já possui um veículo com esta placa.' });
         res.status(400).json({ error: e.message });
     }
 });
@@ -176,17 +141,33 @@ app.put('/api/veiculos/:id', authMiddleware, async (req, res) => {
 app.delete('/api/veiculos/:id', authMiddleware, async (req, res) => {
     try {
         const veiculo = await Veiculo.findById(req.params.id);
-        if (!veiculo) {
-            return res.status(404).json({ error: 'Veículo não encontrado.' });
-        }
-        if (veiculo.owner.toString() !== req.userId) {
-            return res.status(403).json({ error: 'Acesso negado. Você não é o proprietário deste veículo.' });
-        }
+        if (!veiculo) return res.status(404).json({ error: 'Veículo não encontrado.' });
+        if (veiculo.owner.toString() !== req.userId) return res.status(403).json({ error: 'Acesso negado.' });
         await Manutencao.deleteMany({ veiculo: req.params.id });
         await Veiculo.findByIdAndDelete(req.params.id);
         res.json({ message: 'Veículo deletado!' });
     } catch (e) {
         res.status(500).json({ error: e.message });
+    }
+});
+
+app.post('/api/veiculos/:veiculoId/share', authMiddleware, async (req, res) => {
+    try {
+        const { email } = req.body;
+        const { veiculoId } = req.params;
+        const veiculo = await Veiculo.findById(veiculoId);
+        if (!veiculo) return res.status(404).json({ error: 'Veículo não encontrado.' });
+        if (veiculo.owner.toString() !== req.userId) return res.status(403).json({ error: 'Acesso negado. Você não é o proprietário.' });
+        const userToShareWith = await User.findOne({ email });
+        if (!userToShareWith) return res.status(404).json({ error: `Usuário com o e-mail "${email}" não encontrado.` });
+        if (userToShareWith.id === req.userId) return res.status(400).json({ error: 'Você não pode compartilhar um veículo com você mesmo.' });
+        if (veiculo.sharedWith.includes(userToShareWith.id)) return res.status(400).json({ error: `Este veículo já está compartilhado com ${email}.` });
+        veiculo.sharedWith.push(userToShareWith.id);
+        await veiculo.save();
+        res.status(200).json({ message: `Veículo compartilhado com sucesso com ${email}!` });
+    } catch (e) {
+        console.error("Erro ao compartilhar veículo:", e.message);
+        res.status(500).json({ error: 'Erro no servidor ao tentar compartilhar.' });
     }
 });
 
@@ -203,15 +184,55 @@ app.post('/api/veiculos/:veiculoId/manutencoes', authMiddleware, async (req, res
     }
 });
 
-app.get('/api/veiculos/:veiculoId/manutencoes', authMiddleware, async (req, res) => {
+// ROTA DE LISTAGEM DE MANUTENÇÃO QUE ESTAVA FALTANDO
+app.get('/api/veiculos', authMiddleware, async (req, res) => {
+    console.log("\n--- NOVA REQUISIÇÃO PARA /api/veiculos ---");
+    
     try {
-        const veiculo = await Veiculo.findById(req.params.veiculoId);
-        if (!veiculo) return res.status(404).json({ error: 'Veículo não encontrado.' });
-        if (veiculo.owner.toString() !== req.userId) return res.status(403).json({ error: 'Acesso negado.' });
-        const m = await Manutencao.find({ veiculo: req.params.veiculoId }).sort({ data: -1 });
-        res.json(m);
+        // PASSO 1: Confirmar o ID do usuário logado
+        const userId = req.userId;
+        console.log("PASSO 1: ID do usuário logado (req.userId):", userId);
+        if (!userId) {
+            console.log("ERRO: req.userId está nulo ou indefinido. O middleware de autenticação pode ter falhado.");
+            return res.status(401).json({ error: "ID de usuário não encontrado no token." });
+        }
+
+        // PASSO 2: Executar a busca SEM o .populate()
+        console.log("PASSO 2: Executando a consulta ao banco de dados...");
+        const query = {
+            $or: [
+                { owner: userId },
+                { sharedWith: userId }
+            ]
+        };
+        console.log("Consulta (Query):", JSON.stringify(query, null, 2));
+        
+        const veiculosSemPopulate = await Veiculo.find(query);
+        
+        console.log(`PASSO 3: Encontrados ${veiculosSemPopulate.length} veículos ANTES do populate.`);
+        if (veiculosSemPopulate.length > 0) {
+            console.log("Primeiro veículo encontrado (sem populate):", veiculosSemPopulate[0]);
+        }
+
+        // PASSO 4: Executar a busca COMPLETA com o .populate()
+        console.log("PASSO 4: Re-executando a consulta COM o .populate('owner', 'email')...");
+        
+        const veiculosComPopulate = await Veiculo.find(query)
+            .populate('owner', 'email')
+            .sort({ createdAt: -1 });
+
+        console.log(`PASSO 5: Encontrados ${veiculosComPopulate.length} veículos DEPOIS do populate.`);
+        if (veiculosComPopulate.length > 0) {
+            console.log("Primeiro veículo encontrado (COM populate):", veiculosComPopulate[0]);
+            console.log("Tipo do campo 'owner' no primeiro veículo:", typeof veiculosComPopulate[0].owner);
+        }
+
+        console.log("--- FIM DA REQUISIÇÃO ---");
+        res.json(veiculosComPopulate);
+
     } catch (e) {
-        res.status(500).json({ error: e.message });
+        console.error("ERRO CRÍTICO NA ROTA /api/veiculos:", e);
+        res.status(500).json({ error: "Erro interno do servidor.", details: e.message });
     }
 });
 
@@ -250,17 +271,13 @@ app.get('/clima', async (req, res) => {
     }
 });
 
-
 // ==========================================================
-// === SERVIR ARQUIVOS ESTÁTICOS (DEVE VIR DEPOIS DAS ROTAS DA API) ===
+// === SERVIR ARQUIVOS ESTÁTICOS ===
 // ==========================================================
 app.use(express.static(path.join(__dirname, 'public')));
-
-// Rota Curinga: Se nenhuma rota da API correspondeu, envia o index.html
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
-
 
 // --- INICIALIZAÇÃO DO SERVIDOR ---
 const startServer = async () => {

@@ -1394,3 +1394,23 @@ body.dark-theme .previsao-container {
 body.dark-theme .previsao-container p {
     color: #ccc !important; /* Força a cor do texto placeholder */
 }
+.btn-share {
+    background-color: #4CAF50; /* Verde */
+    padding: 5px 10px;
+    font-size: 0.85em;
+    margin: 0 0 0 5px; /* Margem à esquerda */
+}
+
+.btn-share:hover {
+    background-color: #45a049;
+}
+
+.shared-info {
+    color: #666;
+    font-style: italic;
+    font-size: 0.9em;
+}
+
+body.dark-theme .shared-info {
+    color: #ccc;
+}

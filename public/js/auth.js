@@ -1,14 +1,17 @@
-// js/auth.js
+// js/auth.js (VERSÃO FINAL E CORRIGIDA)
 const backendUrl = 'https://garagem-interativa-1.onrender.com';
 
-function saveAuthData(token, email) {
+// A FUNÇÃO CORRIGIDA ESTÁ AQUI
+function saveAuthData(token, email, userId) {
     localStorage.setItem('token', token);
     localStorage.setItem('userEmail', email);
+    localStorage.setItem('userId', userId); // Esta linha garante que o ID seja salvo
 }
 
 function clearAuthData() {
     localStorage.removeItem('token');
     localStorage.removeItem('userEmail');
+    localStorage.removeItem('userId');
 }
 
 function getToken() {
@@ -17,6 +20,10 @@ function getToken() {
 
 function getUserEmail() {
     return localStorage.getItem('userEmail');
+}
+
+function getUserId() {
+    return localStorage.getItem('userId');
 }
 
 function isLoggedIn() {
@@ -36,10 +43,10 @@ async function fetchWithAuth(url, options = {}) {
 
     const response = await fetch(url, { ...options, headers });
 
-    if (response.status === 401 || response.status === 403) {
+    if (response.status === 401) {
         console.log('Token inválido ou expirado. Fazendo logout.');
         clearAuthData();
-        window.location.href = '/index.html';
+        window.location.reload(); 
     }
 
     return response;

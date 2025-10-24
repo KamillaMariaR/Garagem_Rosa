@@ -1414,3 +1414,122 @@ body.dark-theme .previsao-container p {
 body.dark-theme .shared-info {
     color: #ccc;
 }
+
+/* Área de Notificação (Feedback Visual) */
+#notification-area {
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    color: #fff;
+    text-align: center;
+    font-weight: bold;
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    pointer-events: none; /* Impede cliques quando invisível */
+}
+
+#notification-area.show {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto; /* Permite cliques quando visível */
+}
+
+#notification-area.success {
+    background-color: #4CAF50; /* Verde */
+}
+
+#notification-area.error {
+    background-color: #f44336; /* Vermelho */
+}
+
+/* Lista de Usuários Compartilhados na Tabela */
+.shared-with-container {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dotted #f8bbd0;
+}
+
+body.dark-theme .shared-with-container {
+    border-top-color: #555;
+}
+
+.shared-with-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.shared-with-list > span {
+    font-size: 0.85em;
+    font-weight: bold;
+    color: #ad1457;
+}
+
+body.dark-theme .shared-with-list > span {
+    color: #f48fb1;
+}
+
+.shared-with-list li {
+    background-color: #fce4ec;
+    color: #c2185b;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+body.dark-theme .shared-with-list li {
+     background-color: #3a222c;
+     color: #f48fb1;
+}
+
+.btn-unshare {
+    background: none !important; /* !important para sobrescrever outros estilos de botão */
+    border: none;
+    color: #c2185b;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1.2em;
+    padding: 0 2px;
+    line-height: 1;
+    margin: 0;
+    transform: none; /* Reseta o transform:hover de outros botões */
+}
+
+body.dark-theme .btn-unshare {
+    color: #f48fb1;
+}
+
+.btn-unshare:hover {
+    color: #f44336 !important; /* !important para garantir a cor no hover */
+    background-color: transparent !important;
+}
+/* ================================================================ */
+/* === ESTILO PARA O SELO "MEU VEÍCULO" === */
+/* ================================================================ */
+
+.owner-badge {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 2px 8px;
+    font-size: 0.75em;
+    font-weight: bold;
+    color: #c2185b;
+    background-color: #fce4ec;
+    border: 1px solid #f8bbd0;
+    border-radius: 10px;
+}
+
+body.dark-theme .owner-badge {
+    color: #f48fb1;
+    background-color: #3a222c;
+    border-color: #555;
+}

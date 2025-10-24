@@ -1,287 +1,346 @@
-// js/main.js (VERSÃO SIMPLIFICADA)
-// A lógica de mostrar/esconder o menu foi movida para o theme.js
+// js/main.js (VERSÃO FINAL COM CORREÇÃO NA COMPARAÇÃO DE ID)
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("DOM carregado. Iniciando script principal (index)...");
+    console.log("DOM carregado. Iniciando script principal...");
 
-    // === SELETORES DE ELEMENTOS DA PÁGINA INICIAL ===
+    // === SELETORES DE ELEMENTOS ===
     const secaoAuth = document.getElementById('secao-autenticacao');
     const conteudoPrincipal = document.getElementById('conteudo-principal');
-    const userInfoBar = document.getElementById('user-info-bar'); // A barra com o e-mail e botão sair
+    const userInfoBar = document.getElementById('user-info-bar');
     const userEmailDisplay = document.getElementById('user-email-display');
     const formLogin = document.getElementById('form-login');
     const formRegister = document.getElementById('form-register');
     const linkMostrarRegistro = document.getElementById('link-mostrar-registro');
     const linkMostrarLogin = document.getElementById('link-mostrar-login');
     const containerRegistro = document.getElementById('container-registro');
-    const authErrorMessage = document.getElementById('auth-error-message');
     const formVeiculo = document.getElementById('form-add-veiculo');
     const btnSubmit = document.getElementById('btn-submit-veiculo');
-   
+    const notificationArea = document.getElementById('notification-area');
+    let notificationTimeout;
 
-    
     let modoEdicao = { ativo: false, veiculoId: null };
     let dadosPrevisaoGlobal = null;
     let unidadeTemperaturaAtual = localStorage.getItem('unidadeTemperaturaPreferida') || 'C';
 
     // =============================================================
+    // === ✨ SISTEMA DE FEEDBACK VISUAL ✨ ===
+    // =============================================================
+    function showNotification(message, type = 'success') {
+        if (!notificationArea) return;
+
+        clearTimeout(notificationTimeout);
+
+        notificationArea.textContent = message;
+        notificationArea.className = '';
+        notificationArea.style.display = 'block';
+
+        setTimeout(() => {
+            notificationArea.classList.add(type, 'show');
+        }, 10);
+
+        notificationTimeout = setTimeout(() => {
+            notificationArea.classList.remove('show');
+            setTimeout(() => {
+                if (!notificationArea.classList.contains('show')) {
+                    notificationArea.style.display = 'none';
+                }
+            }, 500);
+        }, 5000);
+    }
+
+    // =============================================================
     // === LÓGICA DE CONTROLE DA UI (LOGIN/LOGOUT) ===
     // =============================================================
-function showAuthError(message) {
-    authErrorMessage.textContent = message;
-    authErrorMessage.style.display = 'block';
-}
-function checkAuthState() {
-    // Se o usuário estiver logado...
-    if (isLoggedIn()) {
-        // 1. Esconde os formulários de login/registro
-        secaoAuth.style.display = 'none';
-
-        // 2. Mostra o conteúdo principal da garagem
-        conteudoPrincipal.style.display = 'block';
-        
-        // 3. Mostra a barra de usuário com o e-mail e botão "Sair"
-        userInfoBar.style.display = 'flex';
-        userEmailDisplay.textContent = getUserEmail(); // Pega o e-mail do localStorage
-
-        // 4. Carrega os dados que só usuários logados podem ver
-        carregarDadosLogado();
-
-    } 
-    // Se o usuário NÃO estiver logado...
-    else {
-        // 1. Mostra os formulários de login/registro
-        secaoAuth.style.display = 'block';
-
-        // 2. Esconde o conteúdo principal da garagem
-        conteudoPrincipal.style.display = 'none';
-        
-        // 3. Esconde a barra de usuário
-        userInfoBar.style.display = 'none';
-
-        // 4. Exibe uma mensagem de boas-vindas (opcional, o próprio formulário já faz isso)
-        console.log("Bem-vindo, visitante! Por favor, faça login ou registre-se.");
-    }
-}
-
-function carregarDadosLogado() {
-    buscarEExibirVeiculosNaTabela();
-    carregarVeiculosDestaque();
-    carregarServicos();
-}
-
-    // Função que mostra o conteúdo certo após o login
-    function mostrarConteudoLogado() {
+    function checkAuthState() {
         if (isLoggedIn()) {
             secaoAuth.style.display = 'none';
             conteudoPrincipal.style.display = 'block';
+            userInfoBar.style.display = 'flex';
+            userEmailDisplay.textContent = getUserEmail();
             carregarDadosLogado();
         } else {
-             secaoAuth.style.display = 'block';
-             conteudoPrincipal.style.display = 'none';
+            secaoAuth.style.display = 'block';
+            conteudoPrincipal.style.display = 'none';
+            userInfoBar.style.display = 'none';
         }
     }
-    
+
     function carregarDadosLogado() {
         buscarEExibirVeiculosNaTabela();
         carregarVeiculosDestaque();
         carregarServicos();
     }
-    
+
     // =============================================================
-    // === EVENT LISTENERS DE AUTENTICAÇÃO ===
+    // === EVENT LISTENERS DE AUTENTICAÇÃO (COM FEEDBACK) ===
     // =============================================================
-    
     formLogin.addEventListener('submit', async (e) => {
         e.preventDefault();
-        showAuthError('');
         const email = document.getElementById('login-email').value;
         const password = document.getElementById('login-password').value;
+        const btn = e.target.querySelector('button');
+        btn.disabled = true;
+        btn.textContent = 'Entrando...';
+
         try {
             const response = await fetch(`${backendUrl}/api/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password })
             });
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || 'Erro desconhecido.');
-            saveAuthData(data.token, data.email);
             
-            // ATUALIZADO: Agora apenas recarrega a página. O theme.js vai cuidar do resto.
-            window.location.reload(); 
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.message || 'Erro no login');
+            }
+            
+            const data = await response.json();
+            saveAuthData(data.token, data.email, data.userId);
+            showNotification('Login realizado com sucesso! Bem-vindo(a)!', 'success');
+            setTimeout(() => window.location.reload(), 1500);
+
         } catch (error) {
-            showAuthError(`Falha no login: ${error.message}`);
+            showNotification(`Erro: ${error.message}`, 'error');
+            btn.disabled = false;
+            btn.textContent = 'Entrar';
         }
     });
 
     formRegister.addEventListener('submit', async (e) => {
         e.preventDefault();
-        showAuthError('');
         const email = document.getElementById('register-email').value;
         const password = document.getElementById('register-password').value;
+        const btn = e.target.querySelector('button');
+        btn.disabled = true;
+        btn.textContent = 'Registrando...';
+        
         try {
             const response = await fetch(`${backendUrl}/api/auth/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password })
             });
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || 'Erro desconhecido.');
-            alert('Registro bem-sucedido! Agora você pode fazer login.');
+            
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.message || 'Erro no registro');
+            }
+            
+            showNotification('Registro bem-sucedido! Agora você pode fazer login.', 'success');
             containerRegistro.style.display = 'none';
             formLogin.style.display = 'block';
+            document.getElementById('login-email').value = email;
+            document.getElementById('login-password').focus();
+
         } catch (error) {
-            showAuthError(`Falha no registro: ${error.message}`);
+            showNotification(`Erro: ${error.message}`, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Registrar';
         }
     });
-    
+
     linkMostrarRegistro.addEventListener('click', (e) => {
         e.preventDefault();
         formLogin.style.display = 'none';
         containerRegistro.style.display = 'block';
-        showAuthError('');
     });
-    
+
     linkMostrarLogin.addEventListener('click', (e) => {
         e.preventDefault();
         containerRegistro.style.display = 'none';
         formLogin.style.display = 'block';
-        showAuthError('');
     });
-
-    // O resto do seu código de CRUD e APIs continua aqui...
-    // (O código abaixo é o mesmo de antes e não precisa ser alterado)
     
     // =============================================================
-    // === SEÇÃO DE VEÍCULOS (CRUD) ===
+    // === SEÇÃO DE VEÍCULOS (CRUD, SHARE, UNSHARE) ===
     // =============================================================
 
     async function buscarEExibirVeiculosNaTabela() {
-    const tbody = document.getElementById('tbody-veiculos');
-    if (!tbody) return;
-    tbody.innerHTML = `<tr><td colspan="7">Carregando sua frota...</td></tr>`;
-    try {
-        const response = await fetchWithAuth(`${backendUrl}/api/veiculos`);
-        if (!response.ok) throw new Error('Falha ao buscar veículos do servidor.');
+        const tbody = document.getElementById('tbody-veiculos');
+        if (!tbody) return;
+        tbody.innerHTML = `<tr><td colspan="7">Carregando sua frota...</td></tr>`;
         
-        const veiculos = await response.json();
-        const currentUserEmail = getUserEmail(); // Pega o e-mail do usuário logado
+        try {
+            const response = await fetchWithAuth(`${backendUrl}/api/veiculos`);
+            if (!response.ok) throw new Error('Falha ao buscar veículos');
+            
+            const veiculos = await response.json();
+            const currentUserId = getUserId();
 
-        if (veiculos.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7">Nenhum veículo cadastrado ou compartilhado com você.</td></tr>`;
-            return;
+            if (veiculos.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7">Nenhum veículo cadastrado. Adicione um acima!</td></tr>`;
+                return;
+            }
+            
+            tbody.innerHTML = veiculos.map(v => {
+               
+           console.log("--- Verificando Dono do Veículo ---");
+            console.log("Placa do Veículo:", v.placa);
+            console.log("Objeto 'owner' recebido do servidor:", v.owner);
+            console.log("ID do Usuário Logado (do localStorage):", currentUserId);
+            
+            const isOwner = v.owner?._id === currentUserId;
+            
+            console.log("O resultado da comparação 'isOwner' foi:", isOwner);
+            console.log("------------------------------------");
+            // --- FIM DO CÓDIGO DE DEBUG ---
+
+            // O resto da sua lógica 'if (isOwner)' continua aqui...
+            const ownerEmail = v.owner?.email || 'dono desconhecido';
+
+                let sharedInfoHtml = '';
+                let actionButtons = '';
+                let mainContentHtml = '';
+                let ownerBadgeHtml = '';
+
+                if (isOwner) {
+                    ownerBadgeHtml = `<span class="owner-badge">Meu Veículo</span>`;
+                    // BOTÕES PARA O DONO DO VEÍCULO
+                    actionButtons = `
+                        <button class="btn-edit" data-id="${v._id}">Editar</button>
+                        <button class="btn-delete" data-id="${v._id}" data-placa="${v.placa}">Deletar</button>
+                        <button class="btn-share" data-id="${v._id}" data-placa="${v.placa}">Compartilhar</button>
+                    `;
+                    
+                    // LISTA DE PESSOAS COM QUEM ESTÁ COMPARTILhado
+                    if (v.sharedWith && v.sharedWith.length > 0) {
+                        sharedInfoHtml = `
+                            <div class="shared-with-container">
+                                <ul class="shared-with-list">
+                                    <span>Compartilhado com:</span>
+                                    ${v.sharedWith.map(user => `
+                                        <li>
+                                            ${user.email}
+                                            <button class="btn-unshare" 
+                                                    title="Remover acesso de ${user.email}" 
+                                                    data-veiculo-id="${v._id}" 
+                                                    data-user-to-remove-id="${user._id}" 
+                                                    data-user-email="${user.email}">×</button>
+                                        </li>
+                                    `).join('')}
+                                </ul>
+                            </div>
+                        `;
+                    }
+                    mainContentHtml = `<td>${v.modelo} ${ownerBadgeHtml}</td>`;
+                } else {
+                    // VEÍCULO COMPARTILHADO COM VOCÊ
+                    mainContentHtml = `<td>${v.modelo} <br><small class="shared-info">(Compartilhado por ${ownerEmail})</small></td>`;
+                }
+
+                return `
+                    <tr id="veiculo-${v._id}">
+                        <td>${v.placa}</td>
+                        <td>${v.marca}</td>
+                        ${mainContentHtml}
+                        <td>${v.ano}</td>
+                        <td>${v.cor || 'N/A'}</td>
+                        <td>${new Date(v.createdAt).toLocaleDateString('pt-BR')}</td>
+                        <td>
+                            ${actionButtons}
+                            ${isOwner ? sharedInfoHtml : ''}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+        } catch (error) {
+            tbody.innerHTML = `<tr><td colspan="7" class="error">${error.message}</td></tr>`;
+            showNotification(`Erro: ${error.message}`, 'error');
         }
-        
-        tbody.innerHTML = veiculos.map(v => {
-            // Lógica para determinar se o veículo é compartilhado
-            const isOwner = v.owner?.email === currentUserEmail; // O "?" (optional chaining) previne erros
-const ownerEmail = v.owner?.email || 'dono desconhecido'; // Define um texto padrão
-
-let sharedInfo = '';
-let actionButtons = '';
-
-if (isOwner) {
-    // Se for o dono, mostra os botões...
-    actionButtons = `
-        <button class="btn-edit" data-id="${v._id}">Editar</button>
-        <button class="btn-delete" data-id="${v._id}" data-placa="${v.placa}">Deletar</button>
-        <button class="btn-share" data-id="${v._id}" data-placa="${v.placa}">Compartilhar</button>
-    `;
-} else {
-    // Se for compartilhado, mostra de quem é
-    sharedInfo = `<br><small class="shared-info">(Compartilhado por ${ownerEmail})</small>`;
-}
-
-// E certifique-se que o 'return' da função map use as variáveis corretas:
-return `
-    <tr id="veiculo-${v._id}">
-        <td>${v.placa}</td>
-        <td>${v.marca}</td>
-        <td>${v.modelo} ${sharedInfo}</td>
-        <td>${v.ano}</td>
-        <td>${v.cor || 'N/A'}</td>
-        <td>${new Date(v.createdAt).toLocaleDateString('pt-BR')}</td>
-        <td>${actionButtons}</td>
-    </tr>
-`;
-        }).join('');
-
-    } catch (error) {
-        tbody.innerHTML = `<tr><td colspan="7" class="error">${error.message}</td></tr>`;
     }
-}
 
+    // ✨ FASE 2: COMPARTILHAR VEÍCULO
+    async function handleShareVeiculo(id, placa) {
+        const email = prompt(`Com qual e-mail você deseja compartilhar o veículo de placa ${placa}?`);
+        if (!email || email.trim() === '') return;
+
+        try {
+            const response = await fetchWithAuth(`${backendUrl}/api/veiculos/${id}/share`, {
+                method: 'POST',
+                body: JSON.stringify({ email: email.trim() })
+            });
+            
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.message || 'Não foi possível compartilhar');
+            }
+            
+            const data = await response.json();
+            showNotification(data.message, 'success');
+            await buscarEExibirVeiculosNaTabela();
+        } catch (error) {
+            showNotification(`Erro: ${error.message}`, 'error');
+        }
+    }
+
+    // ✨ FASE 3: REMOVER COMPARTILHAMENTO (UNSHARE)
+    async function handleUnshareVeiculo(veiculoId, userIdToRemove, userEmail) {
+        if (!confirm(`Tem certeza que deseja remover o acesso de ${userEmail} a este veículo?`)) return;
+
+        try {
+            const response = await fetchWithAuth(`${backendUrl}/api/veiculos/${veiculoId}/unshare`, {
+                method: 'POST',
+                body: JSON.stringify({ userIdToRemove })
+            });
+            
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.message || 'Não foi possível remover o compartilhamento');
+            }
+            
+            const data = await response.json();
+            showNotification(data.message, 'success');
+            await buscarEExibirVeiculosNaTabela();
+        } catch (error) {
+            showNotification(`Erro: ${error.message}`, 'error');
+        }
+    }
+
+    async function handleDeletarVeiculo(id, placa) {
+        if (!confirm(`Tem certeza que deseja deletar o veículo de placa ${placa}?`)) return;
+        
+        try {
+            const response = await fetchWithAuth(`${backendUrl}/api/veiculos/${id}`, { method: 'DELETE' });
+            
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.message || 'Não foi possível deletar');
+            }
+            
+            const data = await response.json();
+            showNotification(data.message, 'success');
+            await Promise.all([buscarEExibirVeiculosNaTabela(), carregarVeiculosDestaque()]);
+        } catch (error) {
+            showNotification(`Erro: ${error.message}`, 'error');
+        }
+    }
+    
     function handleIniciarEdicao(id) {
         const linhaVeiculo = document.getElementById(`veiculo-${id}`);
         if (!linhaVeiculo) return;
-
-        const placa = linhaVeiculo.cells[0].textContent;
-        const marca = linhaVeiculo.cells[1].textContent;
-        const modelo = linhaVeiculo.cells[2].textContent;
-        const ano = linhaVeiculo.cells[3].textContent;
-        const cor = linhaVeiculo.cells[4].textContent;
-
-        formVeiculo.querySelector('#input-placa').value = placa;
-        formVeiculo.querySelector('#input-marca').value = marca;
-        formVeiculo.querySelector('#input-modelo').value = modelo;
-        formVeiculo.querySelector('#input-ano').value = ano;
-        formVeiculo.querySelector('#input-cor').value = cor === 'N/A' ? '' : cor;
+        
+        const modeloTexto = linhaVeiculo.cells[2].childNodes[0].nodeValue.trim();
+        formVeiculo.querySelector('#input-placa').value = linhaVeiculo.cells[0].textContent;
+        formVeiculo.querySelector('#input-marca').value = linhaVeiculo.cells[1].textContent;
+        formVeiculo.querySelector('#input-modelo').value = modeloTexto;
+        formVeiculo.querySelector('#input-ano').value = linhaVeiculo.cells[3].textContent;
+        formVeiculo.querySelector('#input-cor').value = linhaVeiculo.cells[4].textContent === 'N/A' ? '' : linhaVeiculo.cells[4].textContent;
         
         btnSubmit.textContent = 'Salvar Alterações';
         modoEdicao = { ativo: true, veiculoId: id };
         formVeiculo.scrollIntoView({ behavior: 'smooth' });
     }
 
-    async function handleSalvarEdicao(event) {
-        event.preventDefault();
-        const veiculoData = {
-            placa: formVeiculo.querySelector('#input-placa').value,
-            marca: formVeiculo.querySelector('#input-marca').value,
-            modelo: formVeiculo.querySelector('#input-modelo').value,
-            ano: formVeiculo.querySelector('#input-ano').value,
-            cor: formVeiculo.querySelector('#input-cor').value,
-        };
-        const id = modoEdicao.veiculoId;
-        const errorMessageDiv = formVeiculo.querySelector('#form-error-message');
-
-        btnSubmit.disabled = true;
-        btnSubmit.textContent = 'Salvando...';
-        errorMessageDiv.style.display = 'none';
-
-        try {
-            const response = await fetchWithAuth(`${backendUrl}/api/veiculos/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(veiculoData),
-            });
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || `Erro ${response.status}`);
-            
-            alert('Veículo atualizado com sucesso!');
-            resetarFormulario();
-            await Promise.all([buscarEExibirVeiculosNaTabela(), carregarVeiculosDestaque()]);
-
-        } catch (error) {
-            errorMessageDiv.textContent = `Erro: ${error.message}`;
-            errorMessageDiv.style.display = 'block';
-        } finally {
-            btnSubmit.disabled = false;
-            if (!modoEdicao.ativo) {
-                btnSubmit.textContent = 'Adicionar Veículo';
-            }
-        }
-    }
-
     function resetarFormulario() {
         formVeiculo.reset();
         btnSubmit.textContent = 'Adicionar Veículo';
         modoEdicao = { ativo: false, veiculoId: null };
-        formVeiculo.querySelector('#form-error-message').style.display = 'none';
     }
 
-    async function handleAdicionarVeiculo(event) {
+    async function handleFormSubmit(event) {
         event.preventDefault();
-        const errorMessageDiv = formVeiculo.querySelector('#form-error-message');
         const veiculoData = {
             placa: formVeiculo.querySelector('#input-placa').value,
             marca: formVeiculo.querySelector('#input-marca').value,
@@ -289,99 +348,49 @@ return `
             ano: formVeiculo.querySelector('#input-ano').value,
             cor: formVeiculo.querySelector('#input-cor').value,
         };
+        
         btnSubmit.disabled = true;
-        btnSubmit.textContent = 'Enviando...';
-        errorMessageDiv.style.display = 'none';
+        const url = modoEdicao.ativo ? `${backendUrl}/api/veiculos/${modoEdicao.veiculoId}` : `${backendUrl}/api/veiculos`;
+        const method = modoEdicao.ativo ? 'PUT' : 'POST';
+        btnSubmit.textContent = modoEdicao.ativo ? 'Salvando...' : 'Adicionando...';
+
         try {
-            const response = await fetchWithAuth(`${backendUrl}/api/veiculos`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+            const response = await fetchWithAuth(url, {
+                method: method,
                 body: JSON.stringify(veiculoData),
             });
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || `Erro ${response.status}`);
-            alert('Veículo adicionado com sucesso!');
-            formVeiculo.reset();
+            
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.message || `Erro ${response.status}`);
+            }
+            
+            showNotification(`Veículo ${modoEdicao.ativo ? 'atualizado' : 'adicionado'} com sucesso!`, 'success');
+            resetarFormulario();
             await Promise.all([buscarEExibirVeiculosNaTabela(), carregarVeiculosDestaque()]);
         } catch (error) {
-            errorMessageDiv.textContent = `Erro: ${error.message}`;
-            errorMessageDiv.style.display = 'block';
+            showNotification(`Erro: ${error.message}`, 'error');
         } finally {
             btnSubmit.disabled = false;
+            if (modoEdicao.ativo) resetarFormulario();
             btnSubmit.textContent = 'Adicionar Veículo';
         }
     }
     
-    async function handleDeletarVeiculo(id, placa) {
-        if (!confirm(`Tem certeza que deseja deletar o veículo de placa ${placa}?`)) return;
-        try {
-            const response = await fetchWithAuth(`${backendUrl}/api/veiculos/${id}`, { method: 'DELETE' });
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || 'Não foi possível deletar o veículo.');
-            alert(data.message);
-            await Promise.all([buscarEExibirVeiculosNaTabela(), carregarVeiculosDestaque()]);
-        } catch (error) {
-            alert(`Erro: ${error.message}`);
-        }
-    }
-    async function handleShareVeiculo(id, placa) {
-    const email = prompt(`Com qual e-mail você deseja compartilhar o veículo de placa ${placa}?`);
-    if (!email) {
-        alert("Compartilhamento cancelado.");
-        return;
-    }
+    formVeiculo?.addEventListener('submit', handleFormSubmit);
 
-    try {
-        const response = await fetchWithAuth(`${backendUrl}/api/veiculos/${id}/share`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: email.trim() })
-        });
-
-        const data = await response.json();
-        if (!response.ok) {
-            throw new Error(data.error || 'Não foi possível compartilhar o veículo.');
-        }
-
-        alert(data.message);
-        // Não precisa recarregar a tabela, pois a lista do dono não muda.
-        // Um feedback visual de sucesso seria um bom aprimoramento futuro.
-
-    } catch (error) {
-        alert(`Erro ao compartilhar: ${error.message}`);
-    }
-}
-
-
-// ... (encontre o listener abaixo e adicione o novo 'if')
-document.getElementById('tbody-veiculos')?.addEventListener('click', (event) => {
-    const target = event.target;
-    if (target.classList.contains('btn-delete')) {
-        handleDeletarVeiculo(target.dataset.id, target.dataset.placa);
-    }
-    if (target.classList.contains('btn-edit')) {
-        handleIniciarEdicao(target.dataset.id);
-    }
-    // ✨ ADICIONAR ESTE BLOCO ✨
-    if (target.classList.contains('btn-share')) {
-        handleShareVeiculo(target.dataset.id, target.dataset.placa);
-    }
-});
-    formVeiculo?.addEventListener('submit', (event) => {
-        if (modoEdicao.ativo) {
-            handleSalvarEdicao(event);
-        } else {
-            handleAdicionarVeiculo(event);
-        }
-    });
-
+    // EVENT DELEGATION PARA TODOS OS BOTÕES DA TABELA
     document.getElementById('tbody-veiculos')?.addEventListener('click', (event) => {
         const target = event.target;
         if (target.classList.contains('btn-delete')) {
             handleDeletarVeiculo(target.dataset.id, target.dataset.placa);
-        }
-        if (target.classList.contains('btn-edit')) {
+        } else if (target.classList.contains('btn-edit')) {
             handleIniciarEdicao(target.dataset.id);
+        } else if (target.classList.contains('btn-share')) {
+            handleShareVeiculo(target.dataset.id, target.dataset.placa);
+        } else if (target.classList.contains('btn-unshare')) {
+            const { veiculoId, userToRemoveId, userEmail } = target.dataset;
+            handleUnshareVeiculo(veiculoId, userToRemoveId, userEmail);
         }
     });
 
@@ -405,7 +414,6 @@ document.getElementById('tbody-veiculos')?.addEventListener('click', (event) => 
                     <h3>${v.modelo} (${v.ano})</h3>
                     <p><strong>${v.destaque}</strong></p>
                 </div>`).join('');
-                
         } catch (error) {
             container.innerHTML = `<p class="error">${error.message}</p>`;
         }
@@ -430,7 +438,7 @@ document.getElementById('tbody-veiculos')?.addEventListener('click', (event) => 
         try {
             const response = await fetch(url);
             const dicas = await response.json();
-            if (!response.ok) throw new Error(dicas.error || 'Erro ao buscar dicas.');
+            if (!response.ok) throw new Error(dicas.message || 'Erro ao buscar dicas.');
             container.innerHTML = '<ul>' + dicas.map(d => `<li>${d.dica}</li>`).join('') + '</ul>';
         } catch (error) {
             container.innerHTML = `<p class="error">${error.message}</p>`;
@@ -443,137 +451,6 @@ document.getElementById('tbody-veiculos')?.addEventListener('click', (event) => 
         if (tipo) buscarEExibirDicas(`${backendUrl}/api/dicas-manutencao/${tipo}`);
     });
 
-    // =============================================================
-    // === SEÇÃO DE PREVISÃO DO TEMPO ===
-    // =============================================================
-
-    function celsiusParaFahrenheit(celsius) { return (celsius * 9 / 5) + 32; }
-    function formatarTemperatura(tempCelsius) { return unidadeTemperaturaAtual === 'F' ? `${celsiusParaFahrenheit(tempCelsius).toFixed(1)}°F` : `${tempCelsius.toFixed(1)}°C`; }
-    function formatarTemperaturaInteira(tempCelsius) { return unidadeTemperaturaAtual === 'F' ? `${celsiusParaFahrenheit(tempCelsius).toFixed(0)}°F` : `${tempCelsius.toFixed(0)}°C`; }
-    
-    function getClassPorTemperatura(tempCelsius) {
-        if (tempCelsius < 5) return 'temp-grad-muito-frio';
-        if (tempCelsius < 12) return 'temp-grad-frio';
-        if (tempCelsius < 20) return 'temp-grad-ameno';
-        if (tempCelsius < 28) return 'temp-grad-quente';
-        return 'temp-grad-muito-quente';
-    }
-
-    async function fetchForecastData(nomeCidade) {
-        const resultadoDiv = document.getElementById('previsao-tempo-resultado');
-        if (!nomeCidade) {
-            resultadoDiv.innerHTML = '<p class="error">Por favor, digite uma cidade.</p>';
-            return;
-        }
-        resultadoDiv.innerHTML = '<p class="loading">Verificando clima...</p>';
-        try {
-            const response = await fetch(`${backendUrl}/clima?cidade=${encodeURIComponent(nomeCidade)}`);
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.message || "Erro ao buscar clima.");
-
-            const previsoesPorDia = {};
-            if (data.list && data.list.length > 0) {
-                data.list.forEach(item => {
-                    const dataISO = item.dt_txt.split(' ')[0];
-                    if (!previsoesPorDia[dataISO]) {
-                        previsoesPorDia[dataISO] = { data: dataISO, entradas: [], temp_min_dia: item.main.temp_min, temp_max_dia: item.main.temp_max, descricoesContador: {}, iconesContador: {}, umidadeSoma: 0, tempSoma: 0, countEntradas: 0 };
-                    }
-                    const dia = previsoesPorDia[dataISO];
-                    dia.entradas.push(item);
-                    dia.temp_min_dia = Math.min(dia.temp_min_dia, item.main.temp_min);
-                    dia.temp_max_dia = Math.max(dia.temp_max_dia, item.main.temp_max);
-                    const desc = item.weather[0].description;
-                    const iconBase = item.weather[0].icon.substring(0, 2);
-                    dia.descricoesContador[desc] = (dia.descricoesContador[desc] || 0) + 1;
-                    dia.iconesContador[iconBase] = (dia.iconesContador[iconBase] || 0) + 1;
-                    dia.umidadeSoma += item.main.humidity;
-                    dia.tempSoma += item.main.temp;
-                    dia.countEntradas++;
-                });
-            }
-            const resultadoFinal = Object.values(previsoesPorDia).map(dia => {
-                const descFinal = Object.keys(dia.descricoesContador).reduce((a, b) => dia.descricoesContador[a] > dia.descricoesContador[b] ? a : b);
-                const iconBaseFinal = Object.keys(dia.iconesContador).reduce((a, b) => dia.iconesContador[a] > dia.iconesContador[b] ? a : b);
-                return {
-                    data: dia.data, temperaturaMin: dia.temp_min_dia, temperaturaMax: dia.temp_max_dia,
-                    temperatura: dia.tempSoma / dia.countEntradas, descricao: descFinal, icone: `${iconBaseFinal}d`,
-                    umidade: dia.umidadeSoma / dia.countEntradas, entradasHorarias: dia.entradas
-                };
-            });
-            
-            dadosPrevisaoGlobal = { cidadeNome: data.city?.name || "Desconhecida", pais: data.city?.country || "", previsoes: resultadoFinal };
-            renderizarPrevisaoCompleta();
-
-        } catch (error) {
-            resultadoDiv.innerHTML = `<p class="error">Não foi possível buscar a previsão. (${error.message})</p>`;
-            dadosPrevisaoGlobal = null;
-        }
-    }
-
-    function renderizarPrevisaoCompleta() {
-        const previsaoResultadoDiv = document.getElementById('previsao-tempo-resultado');
-        if (!dadosPrevisaoGlobal || !previsaoResultadoDiv) return;
-
-        const numDias = parseInt(document.querySelector('input[name="numDias"]:checked')?.value, 10) || 1;
-        const destacarChuva = document.getElementById('destaque-chuva')?.checked;
-        const destacarTempBaixa = document.getElementById('destaque-temp-baixa-check')?.checked;
-        const valorTempBaixa = parseFloat(document.getElementById('destaque-temp-baixa-valor')?.value);
-        const destacarTempAlta = document.getElementById('destaque-temp-alta-check')?.checked;
-        const valorTempAlta = parseFloat(document.getElementById('destaque-temp-alta-valor')?.value);
-
-        let htmlConteudo = `<h3>Clima em ${dadosPrevisaoGlobal.cidadeNome} para ${numDias === 1 ? 'o próximo dia' : `os próximos ${numDias} dias`}</h3><div class="previsao-dias-container">`;
-        if (dadosPrevisaoGlobal.previsoes && dadosPrevisaoGlobal.previsoes.length > 0) {
-            dadosPrevisaoGlobal.previsoes.slice(0, numDias).forEach(previsaoDia => {
-                const dataObj = new Date(previsaoDia.data + "T12:00:00Z");
-                const diaSemana = dataObj.toLocaleDateString('pt-BR', { weekday: 'long', timeZone: 'UTC' });
-                const dataFormatada = dataObj.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', timeZone: 'UTC' });
-                const iconUrl = `https://openweathermap.org/img/wn/${previsaoDia.icone}@2x.png`;
-                
-                let classesCard = `previsao-dia-card forecast-card-clickable ${getClassPorTemperatura(previsaoDia.temperatura)}`;
-                if (destacarChuva && previsaoDia.descricao.toLowerCase().includes('chuva')) classesCard += " highlight-rain";
-                if (destacarTempBaixa && !isNaN(valorTempBaixa) && previsaoDia.temperaturaMin <= valorTempBaixa) classesCard += " highlight-temp-low";
-                if (destacarTempAlta && !isNaN(valorTempAlta) && previsaoDia.temperaturaMax >= valorTempAlta) classesCard += " highlight-temp-high";
-
-                htmlConteudo += `<div class="${classesCard.trim()}" data-forecast-date="${previsaoDia.data}"><div class="card-content-wrapper"><h4>${diaSemana.charAt(0).toUpperCase() + diaSemana.slice(1)}, ${dataFormatada} (clique)</h4><img src="${iconUrl}" alt="${previsaoDia.descricao}" class="weather-icon-daily"><p><strong>Min:</strong> ${formatarTemperatura(previsaoDia.temperaturaMin)} / <strong>Max:</strong> ${formatarTemperatura(previsaoDia.temperaturaMax)}</p><p><strong>Condição:</strong> <span style="text-transform: capitalize;">${previsaoDia.descricao}</span></p><div class="detalhes-horarios-container" style="display: none;"></div></div></div>`;
-            });
-        }
-        htmlConteudo += '</div>';
-        previsaoResultadoDiv.innerHTML = htmlConteudo;
-    }
-
-    document.getElementById('verificar-clima-btn')?.addEventListener('click', () => fetchForecastData(document.getElementById('destino-viagem').value));
-    
-    const btnAlternarUnidade = document.getElementById('alternar-unidade-temp-btn');
-    if (btnAlternarUnidade) {
-        btnAlternarUnidade.textContent = `Mudar para ${unidadeTemperaturaAtual === 'C' ? '°F' : '°C'}`;
-        btnAlternarUnidade.addEventListener('click', () => {
-            unidadeTemperaturaAtual = unidadeTemperaturaAtual === 'C' ? 'F' : 'C';
-            localStorage.setItem('unidadeTemperaturaPreferida', unidadeTemperaturaAtual);
-            btnAlternarUnidade.textContent = `Mudar para ${unidadeTemperaturaAtual === 'C' ? '°F' : '°C'}`;
-            renderizarPrevisaoCompleta();
-        });
-    }
-    
-    document.querySelectorAll('input[name="numDias"]').forEach(r => r.addEventListener('change', renderizarPrevisaoCompleta));
-    ['destaque-chuva', 'destaque-temp-baixa-check', 'destaque-temp-alta-check', 'destaque-temp-baixa-valor', 'destaque-temp-alta-valor'].forEach(id => document.getElementById(id)?.addEventListener('change', renderizarPrevisaoCompleta));
-    
-    document.getElementById('previsao-tempo-resultado')?.addEventListener('click', e => {
-        const cardClicado = e.target.closest('.forecast-card-clickable');
-        if (!cardClicado || !dadosPrevisaoGlobal) return;
-        const detalhesContainer = cardClicado.querySelector('.detalhes-horarios-container');
-        if (!detalhesContainer) return;
-        if (detalhesContainer.style.display === 'block') {
-            detalhesContainer.style.display = 'none';
-            return;
-        }
-        const previsaoDoDia = dadosPrevisaoGlobal.previsoes.find(p => p.data === cardClicado.dataset.forecastDate);
-        if (previsaoDoDia?.entradasHorarias) {
-            detalhesContainer.innerHTML = '<h5>Previsão Horária:</h5><div class="horarios-grid">' + previsaoDoDia.entradasHorarias.map(h => `<div class="horario-item"><span>${h.dt_txt.split(' ')[1].substring(0, 5)}</span><img src="https://openweathermap.org/img/wn/${h.weather[0].icon}.png" alt="${h.weather[0].description}"><span>${formatarTemperaturaInteira(h.main.temp)}</span></div>`).join('') + '</div>';
-            detalhesContainer.style.display = 'block';
-        }
-    });
-
     // --- INICIALIZAÇÃO DA PÁGINA ---
-    // A função no theme.js vai cuidar de mostrar o conteúdo certo na hora certa.
-   checkAuthState();
+    checkAuthState();
 });

@@ -10,6 +10,9 @@
 </head>
 <body>
     <main>
+       <!-- ✨ NOVO: Área para exibir notificações de sucesso e erro ✨ -->
+       <div id="notification-area" style="display: none;"></div>
+       
        <nav class="main-nav">
             <ul>
                 <li><a href="index.html" class="active">Página Inicial</a></li>
@@ -22,12 +25,10 @@
             <button id="btn-theme-switcher" title="Mudar tema">🌙</button>
         </nav>
 
-        <!-- ✨ NOVA BARRA DE USUÁRIO AQUI ✨ -->
         <div id="user-info-bar" style="display: none;">
             <span id="user-email-display"></span>
             <button id="btn-logout">Sair</button>
         </div>
-
 
         <h1>Garagem DreamHouse</h1>
         <p style="margin-top:-15px; margin-bottom: 25px;">Seu painel de controle automotivo!</p>
@@ -36,7 +37,6 @@
         <!-- Seção de Autenticação -->
         <section id="secao-autenticacao" class="container" style="display: none;">
              <h2>Acesse sua Garagem</h2>
-             <div id="auth-error-message" style="display: none; color: red; margin-bottom: 15px; font-weight: bold;"></div>
              
              <form id="form-login" class="manutencao-form" style="max-width: 400px; margin: 10px auto;">
                  <h4>Login</h4>
@@ -72,7 +72,6 @@
                 <p>Adicione ou remova veículos da sua frota.</p>
                 <form id="form-add-veiculo" class="manutencao-form" style="max-width: 600px; margin: 20px auto;">
                     <h4>Adicionar Novo Veículo</h4>
-                    <div id="form-error-message" style="display: none; color: red; margin-bottom: 10px;"></div>
                     <input type="text" id="input-placa" placeholder="Placa (Ex: ABC1D23)" required>
                     <input type="text" id="input-marca" placeholder="Marca (Ex: Honda)" required>
                     <input type="text" id="input-modelo" placeholder="Modelo (Ex: Civic)" required>

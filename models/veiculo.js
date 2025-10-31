@@ -31,14 +31,18 @@ const veiculoSchema = new mongoose.Schema({
         trim: true,
         default: 'Não informada'
     },
+    // NOVO: Campo para armazenar o caminho da imagem
+    imageUrl: {
+        type: String 
+    },
     owner: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User', // A string aqui DEVE ser 'User' com 'U' maiúsculo
+        ref: 'User',
         required: true
     },
     sharedWith: [{
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User' // E aqui também
+      ref: 'User'
     }]
 }, {
     timestamps: true
@@ -46,7 +50,6 @@ const veiculoSchema = new mongoose.Schema({
 
 veiculoSchema.index({ placa: 1, owner: 1 }, { unique: true });
 
-// A única coisa que este arquivo faz é definir e exportar o modelo 'Veiculo'
 const Veiculo = mongoose.model('Veiculo', veiculoSchema);
 
 module.exports = Veiculo;

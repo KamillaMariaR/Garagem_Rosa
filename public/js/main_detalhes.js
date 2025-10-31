@@ -27,6 +27,7 @@ function getVeiculoIdFromPage() {
 
 async function encontrarVeiculoIdParaPagina(tipo) {
     try {
+        // Usa o backendUrl que definimos no auth.js
         const response = await fetchWithAuth(`${backendUrl}/api/veiculos`);
         if (!response.ok) return null;
         const veiculos = await response.json();

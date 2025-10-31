@@ -70,20 +70,36 @@
             <section id="secao-crud-veiculos" class="container">
                 <h2>Gerenciar Frota</h2>
                 <p>Adicione ou remova veículos da sua frota.</p>
-                <form id="form-add-veiculo" class="manutencao-form" style="max-width: 600px; margin: 20px auto;">
+
+                <!-- ALTERADO: Adicionado enctype para permitir upload de arquivos -->
+                <form id="form-add-veiculo" class="manutencao-form" style="max-width: 600px; margin: 20px auto;" enctype="multipart/form-data">
                     <h4>Adicionar Novo Veículo</h4>
-                    <input type="text" id="input-placa" placeholder="Placa (Ex: ABC1D23)" required>
-                    <input type="text" id="input-marca" placeholder="Marca (Ex: Honda)" required>
-                    <input type="text" id="input-modelo" placeholder="Modelo (Ex: Civic)" required>
-                    <input type="number" id="input-ano" placeholder="Ano (Ex: 2021)" required>
-                    <input type="text" id="input-cor" placeholder="Cor (Opcional)">
-                    <button type="submit" id="btn-submit-veiculo">Adicionar Veículo</button>
+                    <input type="text" id="input-placa" name="placa" placeholder="Placa (Ex: ABC1D23)" required pattern="[A-Za-z]{3}[0-9][A-Za-z0-9][0-9]{2}" title="Formato da placa: 3 letras, 1 número, 1 letra/número e 2 números (Ex: ABC1D23)">
+                    <input type="text" id="input-marca" name="marca" placeholder="Marca (Ex: Honda)" required>
+                    <input type="text" id="input-modelo" name="modelo" placeholder="Modelo (Ex: Civic)" required>
+                    <input type="number" id="input-ano" name="ano" placeholder="Ano (Ex: 2021)" required>
+                    <input type="text" id="input-cor" name="cor" placeholder="Cor (Opcional)">
+                    
+                    <!-- NOVO: Campo para upload de imagem -->
+                    <label for="input-imagem" style="display: block; margin-top: 10px; font-weight: bold; color: #c2185b;">Foto do Veículo</label>
+                    <input type="file" id="input-imagem" name="imagem" accept="image/png, image/jpeg">
+                    
+                    <button type="submit" id="btn-submit-veiculo" style="margin-top: 15px;">Adicionar Veículo</button>
                 </form>
+
                 <div class="table-container" style="margin-top: 25px; overflow-x: auto;">
                     <table id="tabela-veiculos">
                         <thead>
                             <tr>
-                                <th>Placa</th><th>Marca</th><th>Modelo</th><th>Ano</th><th>Cor</th><th>Cadastrado em</th><th>Ações</th>
+                                <!-- NOVO: Adicionada coluna para a Imagem -->
+                                <th>Imagem</th>
+                                <th>Placa</th>
+                                <th>Marca</th>
+                                <th>Modelo</th>
+                                <th>Ano</th>
+                                <th>Cor</th>
+                                <th>Cadastrado em</th>
+                                <th>Ações</th>
                             </tr>
                         </thead>
                         <tbody id="tbody-veiculos"></tbody>

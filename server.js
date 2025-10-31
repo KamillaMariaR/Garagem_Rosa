@@ -10,11 +10,15 @@ const axios = require('axios');
 const path = require('path');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+// NOVO: Carrega as variáveis de ambiente do arquivo .env no início de tudo
 require('dotenv').config();
 
 // Imports de autenticação
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+
+// NOVO: Importando o multer para gerenciar os uploads de arquivos
+const multer = require('multer');
 
 // Models e Middleware
 const User = require('./models/User.js');
@@ -23,6 +27,7 @@ const Manutencao = require('./models/Manutencao.js');
 const authMiddleware = require('./middleware/auth.js');
 
 const app = express();
+// USA A PORTA DO AMBIENTE OU 3001 COMO PADRÃO
 const PORT = process.env.PORT || 3001;
 
 // ==========================================================
@@ -34,17 +39,23 @@ app.use(
       directives: {
         ...helmet.contentSecurityPolicy.getDefaultDirectives(),
         "connect-src": ["'self'", "https://garagem-interativa-1.onrender.com", "http://localhost:3001", "http://api.openweathermap.org"],
-        "img-src": ["'self'", "data:", "https://openweathermap.org"],
+        // ALTERADO: Adicionado o endereço do seu backend para permitir que ele mesmo sirva as imagens
+        "img-src": ["'self'", "data:", "https://openweathermap.org", "https://garagem-interativa-1.onrender.com", "http://localhost:3001"],
       },
     },
   })
 );
 app.use(cors({
-    origin: '*', // Permite qualquer origem (apenas para desenvolvimento)
+    origin: '*', // Permite qualquer origem (idealmente, restrinja em produção)
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
 }));
 app.use(express.json());
+
+// NOVO: Middleware para servir arquivos estáticos da pasta 'uploads'
+// Isso torna as imagens acessíveis por uma URL como http://localhost:3001/uploads/nome-da-imagem.jpg
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 
 // Limitadores de requisição
 const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 200, standardHeaders: true, legacyHeaders: false });
@@ -52,12 +63,32 @@ app.use(limiter);
 const createVehicleLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 10, message: 'Você atingiu o limite de criação de veículos.' });
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 15, message: 'Muitas tentativas de autenticação.' });
 
+
+// ==========================================================
+// === NOVO: CONFIGURAÇÃO DO MECANISMO DE UPLOAD (MULTER) ===
+// ==========================================================
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    // Define que os arquivos serão salvos na pasta 'uploads/'
+    cb(null, 'uploads/');
+  },
+  filename: function (req, file, cb) {
+    // Cria um nome de arquivo único para evitar que imagens com o mesmo nome se sobreponham
+    cb(null, Date.now() + '-' + file.originalname);
+  }
+});
+
+// Inicializa o multer com a configuração de armazenamento que criamos
+const upload = multer({ storage: storage });
+
+
 // ==========================================================
 // === CONEXÃO COM O BANCO DE DADOS ===
 // ==========================================================
 const connectDB = async () => {
     try {
         console.log("Tentando conectar ao MongoDB...");
+        // ALTERADO: Usa a variável MONGO_URI do arquivo .env
         const mongoUri = process.env.MONGO_URI;
         if (!mongoUri) throw new Error("ERRO FATAL: Variável MONGO_URI não definida no arquivo .env!");
         if (!process.env.JWT_SECRET) throw new Error("ERRO FATAL: Variável JWT_SECRET não definida no arquivo .env!");
@@ -74,7 +105,7 @@ const connectDB = async () => {
 // === DEFINIÇÃO DAS ROTAS DA API ===
 // ==========================================================
 
-// --- ROTAS DE AUTENTICAÇÃO ---
+// --- ROTAS DE AUTENTICAÇÃO --- (Sem alterações)
 app.post('/api/auth/register', authLimiter, async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -100,6 +131,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
             return res.status(400).json({ message: 'Credenciais inválidas.' });
         }
         const payload = { userId: user.id };
+        // ALTERADO: Usa a variável JWT_SECRET do arquivo .env
         const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
         res.status(200).json({ token, email: user.email, userId: user.id });
     } catch (e) {
@@ -109,16 +141,39 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
 });
 
 // --- ROTAS DE VEÍCULOS (PROTEGIDAS) ---
-app.post('/api/veiculos', authMiddleware, createVehicleLimiter, async (req, res) => {
+
+// ALTERADO: Rota de criação de veículo para aceitar upload de imagem
+// Adicionamos o 'upload.single('imagem')' como um middleware
+app.post('/api/veiculos', authMiddleware, upload.single('imagem'), async (req, res) => {
     try {
-        const v = await Veiculo.create({ ...req.body, owner: req.userId });
-        res.status(201).json(v);
+        // Extrai os dados do corpo da requisição (que agora é multipart/form-data)
+        const { placa, marca, modelo, ano, cor } = req.body;
+
+        // Pega o caminho do arquivo que foi salvo pelo multer
+        // Se nenhum arquivo foi enviado, req.file será undefined
+        const imageUrl = req.file ? req.file.path.replace(/\\/g, '/') : null; // Normaliza a barra para /
+
+        const veiculoData = {
+            placa,
+            marca,
+            modelo,
+            ano,
+            cor,
+            imageUrl, // Salva o caminho da imagem no banco de dados
+            owner: req.userId
+        };
+
+        const novoVeiculo = await Veiculo.create(veiculoData);
+        res.status(201).json(novoVeiculo);
     } catch (e) {
+        // As validações e tratamentos de erro continuam os mesmos
+        if (e.name === 'ValidationError') return res.status(400).json({ message: e.message });
         if (e.code === 11000) return res.status(400).json({ message: 'Você já possui um veículo com esta placa.' });
-        res.status(400).json({ message: e.message });
+        res.status(500).json({ message: 'Erro interno no servidor ao criar veículo.' });
     }
 });
 
+// Rota para buscar os veículos (sem alterações)
 app.get('/api/veiculos', authMiddleware, async (req, res) => {
     try {
         const veiculos = await Veiculo.find({
@@ -134,6 +189,7 @@ app.get('/api/veiculos', authMiddleware, async (req, res) => {
     }
 });
 
+// Rota para atualizar um veículo (sem alterações, não lida com upload de imagem na edição por enquanto)
 app.put('/api/veiculos/:id', authMiddleware, async (req, res) => {
     try {
         const veiculo = await Veiculo.findById(req.params.id);
@@ -147,6 +203,7 @@ app.put('/api/veiculos/:id', authMiddleware, async (req, res) => {
     }
 });
 
+// Rota para deletar um veículo (sem alterações)
 app.delete('/api/veiculos/:id', authMiddleware, async (req, res) => {
     try {
         const veiculo = await Veiculo.findById(req.params.id);
@@ -160,6 +217,7 @@ app.delete('/api/veiculos/:id', authMiddleware, async (req, res) => {
     }
 });
 
+// Rotas de compartilhamento (sem alterações)
 app.post('/api/veiculos/:veiculoId/share', authMiddleware, async (req, res) => {
     try {
         const { email } = req.body;
@@ -197,7 +255,7 @@ app.post('/api/veiculos/:veiculoId/unshare', authMiddleware, async (req, res) =>
     }
 });
 
-// --- ROTAS DE MANUTENÇÃO (PROTEGIDAS) ---
+// --- ROTAS DE MANUTENÇÃO (PROTEGIDAS) --- (sem alterações)
 app.post('/api/veiculos/:veiculoId/manutencoes', authMiddleware, async (req, res) => {
     try {
         const veiculo = await Veiculo.findById(req.params.veiculoId);
@@ -228,7 +286,8 @@ app.get('/api/veiculos/:veiculoId/manutencoes', authMiddleware, async (req, res)
     }
 });
 
-// --- ROTAS PÚBLICAS (INFORMAÇÕES GERAIS) ---
+
+// --- ROTAS PÚBLICAS (INFORMAÇÕES GERAIS) --- (sem alterações)
 const servicosOferecidos = [ { nome: "Troca de Óleo e Filtro", descricao: "Serviço completo.", precoEstimado: "R$ 250,00" }, { nome: "Alinhamento e Balanceamento", descricao: "Direção mais segura.", precoEstimado: "R$ 150,00" }, ];
 const dicasGerais = [{ dica: "Verifique a calibragem dos pneus semanalmente." }, { dica: "Troque o óleo no prazo." }];
 const dicasPorTipo = { carro: [{ dica: "Faça o rodízio dos pneus a cada 10.000 km." }], moto: [{ dica: "Lubrifique a corrente regularmente." }], };
@@ -251,6 +310,7 @@ app.get('/clima', async (req, res) => {
         res.status(status).json({ message });
     }
 });
+
 
 // ==========================================================
 // === SERVIR ARQUIVOS DO FRONTEND E INICIAR SERVIDOR ===

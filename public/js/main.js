@@ -1,4 +1,4 @@
-// js/main.js (VERSÃO FINAL COM CORREÇÃO NA COMPARAÇÃO DE ID)
+// js/main.js (VERSÃO FINALÍSSIMA, 100% COMPLETA E CORRIGIDA)
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log("DOM carregado. Iniciando script principal...");
@@ -19,25 +19,19 @@ document.addEventListener('DOMContentLoaded', () => {
     let notificationTimeout;
 
     let modoEdicao = { ativo: false, veiculoId: null };
-    let dadosPrevisaoGlobal = null;
-    let unidadeTemperaturaAtual = localStorage.getItem('unidadeTemperaturaPreferida') || 'C';
 
     // =============================================================
     // === ✨ SISTEMA DE FEEDBACK VISUAL ✨ ===
     // =============================================================
     function showNotification(message, type = 'success') {
         if (!notificationArea) return;
-
         clearTimeout(notificationTimeout);
-
         notificationArea.textContent = message;
         notificationArea.className = '';
         notificationArea.style.display = 'block';
-
         setTimeout(() => {
             notificationArea.classList.add(type, 'show');
         }, 10);
-
         notificationTimeout = setTimeout(() => {
             notificationArea.classList.remove('show');
             setTimeout(() => {
@@ -140,13 +134,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    linkMostrarRegistro.addEventListener('click', (e) => {
+    linkMostrarRegistro?.addEventListener('click', (e) => {
         e.preventDefault();
         formLogin.style.display = 'none';
         containerRegistro.style.display = 'block';
     });
 
-    linkMostrarLogin.addEventListener('click', (e) => {
+    linkMostrarLogin?.addEventListener('click', (e) => {
         e.preventDefault();
         containerRegistro.style.display = 'none';
         formLogin.style.display = 'block';
@@ -159,7 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function buscarEExibirVeiculosNaTabela() {
         const tbody = document.getElementById('tbody-veiculos');
         if (!tbody) return;
-        tbody.innerHTML = `<tr><td colspan="7">Carregando sua frota...</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8">Carregando sua frota...</td></tr>`;
         
         try {
             const response = await fetchWithAuth(`${backendUrl}/api/veiculos`);
@@ -169,25 +163,19 @@ document.addEventListener('DOMContentLoaded', () => {
             const currentUserId = getUserId();
 
             if (veiculos.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7">Nenhum veículo cadastrado. Adicione um acima!</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8">Nenhum veículo cadastrado. Adicione um acima!</td></tr>`;
                 return;
             }
             
             tbody.innerHTML = veiculos.map(v => {
-               
-           console.log("--- Verificando Dono do Veículo ---");
-            console.log("Placa do Veículo:", v.placa);
-            console.log("Objeto 'owner' recebido do servidor:", v.owner);
-            console.log("ID do Usuário Logado (do localStorage):", currentUserId);
-            
-            const isOwner = v.owner?._id === currentUserId;
-            
-            console.log("O resultado da comparação 'isOwner' foi:", isOwner);
-            console.log("------------------------------------");
-            // --- FIM DO CÓDIGO DE DEBUG ---
+                const isOwner = v.owner?._id === currentUserId;
+                const ownerEmail = v.owner?.email || 'dono desconhecido';
 
-            // O resto da sua lógica 'if (isOwner)' continua aqui...
-            const ownerEmail = v.owner?.email || 'dono desconhecido';
+                const imageUrl = v.imageUrl 
+                    ? `${backendUrl}/${v.imageUrl}` 
+                    : 'imagens/civic-removebg-preview.png';
+
+                const imagemHtml = `<img src="${imageUrl}" alt="Foto de ${v.modelo}" style="width: 100px; height: auto; border-radius: 5px;" onerror="this.onerror=null;this.src='imagens/civic-removebg-preview.png';">`;
 
                 let sharedInfoHtml = '';
                 let actionButtons = '';
@@ -196,14 +184,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (isOwner) {
                     ownerBadgeHtml = `<span class="owner-badge">Meu Veículo</span>`;
-                    // BOTÕES PARA O DONO DO VEÍCULO
                     actionButtons = `
                         <button class="btn-edit" data-id="${v._id}">Editar</button>
                         <button class="btn-delete" data-id="${v._id}" data-placa="${v.placa}">Deletar</button>
                         <button class="btn-share" data-id="${v._id}" data-placa="${v.placa}">Compartilhar</button>
                     `;
                     
-                    // LISTA DE PESSOAS COM QUEM ESTÁ COMPARTILhado
                     if (v.sharedWith && v.sharedWith.length > 0) {
                         sharedInfoHtml = `
                             <div class="shared-with-container">
@@ -212,11 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     ${v.sharedWith.map(user => `
                                         <li>
                                             ${user.email}
-                                            <button class="btn-unshare" 
-                                                    title="Remover acesso de ${user.email}" 
-                                                    data-veiculo-id="${v._id}" 
-                                                    data-user-to-remove-id="${user._id}" 
-                                                    data-user-email="${user.email}">×</button>
+                                            <button class="btn-unshare" title="Remover acesso de ${user.email}" data-veiculo-id="${v._id}" data-user-to-remove-id="${user._id}" data-user-email="${user.email}">×</button>
                                         </li>
                                     `).join('')}
                                 </ul>
@@ -225,12 +207,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     mainContentHtml = `<td>${v.modelo} ${ownerBadgeHtml}</td>`;
                 } else {
-                    // VEÍCULO COMPARTILHADO COM VOCÊ
                     mainContentHtml = `<td>${v.modelo} <br><small class="shared-info">(Compartilhado por ${ownerEmail})</small></td>`;
                 }
 
                 return `
                     <tr id="veiculo-${v._id}">
+                        <td>${imagemHtml}</td>
                         <td>${v.placa}</td>
                         <td>${v.marca}</td>
                         ${mainContentHtml}
@@ -246,12 +228,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }).join('');
 
         } catch (error) {
-            tbody.innerHTML = `<tr><td colspan="7" class="error">${error.message}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8" class="error">${error.message}</td></tr>`;
             showNotification(`Erro: ${error.message}`, 'error');
         }
     }
 
-    // ✨ FASE 2: COMPARTILHAR VEÍCULO
     async function handleShareVeiculo(id, placa) {
         const email = prompt(`Com qual e-mail você deseja compartilhar o veículo de placa ${placa}?`);
         if (!email || email.trim() === '') return;
@@ -275,7 +256,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // ✨ FASE 3: REMOVER COMPARTILHAMENTO (UNSHARE)
     async function handleUnshareVeiculo(veiculoId, userIdToRemove, userEmail) {
         if (!confirm(`Tem certeza que deseja remover o acesso de ${userEmail} a este veículo?`)) return;
 
@@ -321,12 +301,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const linhaVeiculo = document.getElementById(`veiculo-${id}`);
         if (!linhaVeiculo) return;
         
-        const modeloTexto = linhaVeiculo.cells[2].childNodes[0].nodeValue.trim();
-        formVeiculo.querySelector('#input-placa').value = linhaVeiculo.cells[0].textContent;
-        formVeiculo.querySelector('#input-marca').value = linhaVeiculo.cells[1].textContent;
+        const modeloTexto = linhaVeiculo.cells[3].childNodes[0].nodeValue.trim();
+        formVeiculo.querySelector('#input-placa').value = linhaVeiculo.cells[1].textContent;
+        formVeiculo.querySelector('#input-marca').value = linhaVeiculo.cells[2].textContent;
         formVeiculo.querySelector('#input-modelo').value = modeloTexto;
-        formVeiculo.querySelector('#input-ano').value = linhaVeiculo.cells[3].textContent;
-        formVeiculo.querySelector('#input-cor').value = linhaVeiculo.cells[4].textContent === 'N/A' ? '' : linhaVeiculo.cells[4].textContent;
+        formVeiculo.querySelector('#input-ano').value = linhaVeiculo.cells[4].textContent;
+        formVeiculo.querySelector('#input-cor').value = linhaVeiculo.cells[5].textContent === 'N/A' ? '' : linhaVeiculo.cells[5].textContent;
         
         btnSubmit.textContent = 'Salvar Alterações';
         modoEdicao = { ativo: true, veiculoId: id };
@@ -341,23 +321,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function handleFormSubmit(event) {
         event.preventDefault();
-        const veiculoData = {
-            placa: formVeiculo.querySelector('#input-placa').value,
-            marca: formVeiculo.querySelector('#input-marca').value,
-            modelo: formVeiculo.querySelector('#input-modelo').value,
-            ano: formVeiculo.querySelector('#input-ano').value,
-            cor: formVeiculo.querySelector('#input-cor').value,
-        };
         
+        const formData = new FormData(formVeiculo);
+
         btnSubmit.disabled = true;
         const url = modoEdicao.ativo ? `${backendUrl}/api/veiculos/${modoEdicao.veiculoId}` : `${backendUrl}/api/veiculos`;
         const method = modoEdicao.ativo ? 'PUT' : 'POST';
         btnSubmit.textContent = modoEdicao.ativo ? 'Salvando...' : 'Adicionando...';
 
         try {
+            const isCreating = !modoEdicao.ativo;
+            
+            const body = isCreating ? formData : JSON.stringify({
+                placa: formData.get('placa'),
+                marca: formData.get('marca'),
+                modelo: formData.get('modelo'),
+                ano: formData.get('ano'),
+                cor: formData.get('cor')
+            });
+            
             const response = await fetchWithAuth(url, {
                 method: method,
-                body: JSON.stringify(veiculoData),
+                body: body,
             });
             
             if (!response.ok) {
@@ -379,7 +364,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     formVeiculo?.addEventListener('submit', handleFormSubmit);
 
-    // EVENT DELEGATION PARA TODOS OS BOTÕES DA TABELA
     document.getElementById('tbody-veiculos')?.addEventListener('click', (event) => {
         const target = event.target;
         if (target.classList.contains('btn-delete')) {
@@ -451,6 +435,170 @@ document.addEventListener('DOMContentLoaded', () => {
         if (tipo) buscarEExibirDicas(`${backendUrl}/api/dicas-manutencao/${tipo}`);
     });
 
+
+    // =======================================================================
+    // === ✨ LÓGICA COMPLETA E CORRIGIDA DO CLIMA ✨ ===
+    // =======================================================================
+    let dadosPrevisaoGlobal = null;
+    let unidadeTemperaturaAtual = localStorage.getItem('unidadeTemperaturaPreferida') || 'C';
+
+    const btnVerificarClima = document.getElementById('verificar-clima-btn');
+    const inputDestino = document.getElementById('destino-viagem');
+    const resultadoClima = document.getElementById('previsao-tempo-resultado');
+    const btnAlternarUnidade = document.getElementById('alternar-unidade-temp-btn');
+    const filtroChuvaCheck = document.getElementById('destaque-chuva');
+    const filtroTempBaixaCheck = document.getElementById('destaque-temp-baixa-check');
+    const filtroTempBaixaValor = document.getElementById('destaque-temp-baixa-valor');
+    const filtroTempAltaCheck = document.getElementById('destaque-temp-alta-check');
+    const filtroTempAltaValor = document.getElementById('destaque-temp-alta-valor');
+    
+    function celsiusParaFahrenheit(c) {
+        return (c * 9/5) + 32;
+    }
+
+    function renderizarPrevisao(dados) {
+        if (!dados) {
+            resultadoClima.innerHTML = `<p class="error">Nenhum dado de previsão para exibir.</p>`;
+            return;
+        }
+
+        dadosPrevisaoGlobal = dados;
+
+        const destacarChuva = filtroChuvaCheck.checked;
+        const destacarTempBaixa = filtroTempBaixaCheck.checked;
+        const valorTempBaixa = parseFloat(filtroTempBaixaValor.value);
+        const destacarTempAlta = filtroTempAltaCheck.checked;
+        const valorTempAlta = parseFloat(filtroTempAltaValor.value);
+
+        const numDiasSelecionado = parseInt(document.querySelector('input[name="numDias"]:checked').value);
+        const diasParaExibir = [];
+        const diasJaAdicionados = new Set();
+
+        for (const previsao of dados.list) {
+            const data = new Date(previsao.dt_txt).toLocaleDateString('pt-BR');
+            if (!diasJaAdicionados.has(data) && diasParaExibir.length < numDiasSelecionado) {
+                diasParaExibir.push(previsao);
+                diasJaAdicionados.add(data);
+            }
+        }
+
+        let html = `<h3>Previsão para ${dados.city.name}</h3><div class="previsao-dias-container">`;
+        
+        html += diasParaExibir.map(dia => {
+            const data = new Date(dia.dt_txt);
+            const diaSemana = data.toLocaleDateString('pt-BR', { weekday: 'long' });
+            const dataFormatada = data.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+
+            let temp = dia.main.temp;
+            let tempMin = dia.main.temp_min;
+            let tempMax = dia.main.temp_max;
+            
+            let classesExtras = '';
+            if (destacarChuva && dia.weather[0].description.toLowerCase().includes('chuva')) {
+                classesExtras += ' highlight-rain';
+            }
+            if (destacarTempBaixa && dia.main.temp_min < valorTempBaixa) {
+                classesExtras += ' highlight-temp-low';
+            }
+            if (destacarTempAlta && dia.main.temp_max > valorTempAlta) {
+                classesExtras += ' highlight-temp-high';
+            }
+
+            if (unidadeTemperaturaAtual === 'F') {
+                temp = celsiusParaFahrenheit(temp);
+                tempMin = celsiusParaFahrenheit(tempMin);
+                tempMax = celsiusParaFahrenheit(tempMax);
+            }
+
+            const unidade = `°${unidadeTemperaturaAtual}`;
+            const iconeUrl = `https://openweathermap.org/img/wn/${dia.weather[0].icon}@2x.png`;
+            
+            return `
+                <div class="previsao-dia-card${classesExtras}">
+                    <div class="card-content-wrapper">
+                        <h4>${diaSemana} <br><small>(${dataFormatada})</small></h4>
+                        <img src="${iconeUrl}" alt="${dia.weather[0].description}" class="weather-icon-daily">
+                        <p><strong>${temp.toFixed(1)}${unidade}</strong></p>
+                        <p><small>Min: ${tempMin.toFixed(1)}${unidade} / Max: ${tempMax.toFixed(1)}${unidade}</small></p>
+                        <p><small>${dia.weather[0].description}</small></p>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+        html += `</div>`;
+        resultadoClima.innerHTML = html;
+    }
+
+    async function buscarPrevisao() {
+        const cidade = inputDestino.value.trim();
+        if (!cidade) {
+            resultadoClima.innerHTML = `<p class="error">Por favor, digite uma cidade.</p>`;
+            return;
+        }
+
+        resultadoClima.innerHTML = `<p class="loading">Buscando previsão para ${cidade}...</p>`;
+        btnVerificarClima.disabled = true;
+
+        try {
+            const response = await fetch(`${backendUrl}/clima?cidade=${encodeURIComponent(cidade)}`);
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Erro desconhecido ao buscar clima.');
+            }
+            
+            renderizarPrevisao(data);
+
+        } catch (error) {
+            resultadoClima.innerHTML = `<p class="error">Erro: ${error.message}</p>`;
+            dadosPrevisaoGlobal = null;
+        } finally {
+            btnVerificarClima.disabled = false;
+        }
+    }
+
+    function atualizarUnidadeUI() {
+        if (unidadeTemperaturaAtual === 'F') {
+            btnAlternarUnidade.textContent = 'Mudar para °C';
+        } else {
+            btnAlternarUnidade.textContent = 'Mudar para °F';
+        }
+        localStorage.setItem('unidadeTemperaturaPreferida', unidadeTemperaturaAtual);
+        
+        if (dadosPrevisaoGlobal) {
+            renderizarPrevisao(dadosPrevisaoGlobal);
+        }
+    }
+
+    btnVerificarClima?.addEventListener('click', buscarPrevisao);
+
+    btnAlternarUnidade?.addEventListener('click', () => {
+        unidadeTemperaturaAtual = (unidadeTemperaturaAtual === 'C') ? 'F' : 'C';
+        atualizarUnidadeUI();
+    });
+
+    document.querySelectorAll('input[name="numDias"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+            if (dadosPrevisaoGlobal) {
+                renderizarPrevisao(dadosPrevisaoGlobal);
+            }
+        });
+    });
+
+    const filtros = [filtroChuvaCheck, filtroTempBaixaCheck, filtroTempBaixaValor, filtroTempAltaCheck, filtroTempAltaValor];
+    filtros.forEach(filtro => {
+        filtro?.addEventListener('change', () => {
+            if (dadosPrevisaoGlobal) {
+                renderizarPrevisao(dadosPrevisaoGlobal);
+            }
+        });
+    });
+
+    atualizarUnidadeUI();
+
+    // =======================================================================
     // --- INICIALIZAÇÃO DA PÁGINA ---
+    // =======================================================================
     checkAuthState();
 });

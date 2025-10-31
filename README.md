@@ -1,19 +1,35 @@
-# 💖 Garagem DreamHouse 💖
+# 💖 Garagem Rosa 💖
 
 _Seu painel de controle automotivo, com um toque de glamour!_
 
-![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
-![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
-![Express.js](https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white)
-![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white)
+<br>
+
+<p align="center">
+  <a href="https://garagem-interativa-1.onrender.com" target="_blank">
+    <img src="https://img.shields.io/badge/✨_Ver_Projeto_Online-E91E63?style=for-the-badge" alt="Ver Projeto Online">
+  </a>
+</p>
+
+<!-- ✨ RECOMENDADO: Coloque um print ou um GIF do seu projeto aqui! ✨ -->
+<p align="center">
+  <img src="./caminho/para/seu/gif_ou_imagem.gif" alt="Demonstração da Garagem Rosa" width="80%">
+</p>
+
+## 📋 Tabela de Conteúdos
+1. [📄 Sobre o Projeto](#-sobre-o-projeto)
+2. [✨ Funcionalidades Principais](#-funcionalidades-principais)
+3. [🚀 Tecnologias Utilizadas](#-tecnologias-utilizadas)
+4. [🔧 Como Rodar o Projeto Localmente](#-como-rodar-o-projeto-localmente)
+5. [💖 Feito com Carinho](#-feito-com-carinho)
+
 
 ---
 
 ## 📄 Sobre o Projeto
 
-Bem-vindo(a) à Garagem DreamHouse! Este não é apenas um sistema de gerenciamento de veículos, é uma experiência completa. Desenvolvido com uma stack MERN (MongoDB, Express, Node.js) e um frontend em JavaScript puro, este projeto permite que usuários cadastrem, gerenciem e até compartilhem seus veículos com amigos.
+Bem-vindo(a) à Garagem Rosa! Este não é apenas um sistema de gerenciamento de veículos, é uma experiência completa. Desenvolvido com uma stack MERN (MongoDB, Express, Node.js) e um frontend em JavaScript puro, este projeto permite que usuários cadastrem, gerenciem e até compartilhem seus veículos com amigos.
 
-O projeto foi construído do zero, focando em funcionalidades do mundo real como autenticação segura, upload de arquivos, consumo de APIs externas e um design interativo e responsivo.
+A aplicação está hospedada no Render e pode ser acessada em [garagem-interativa-1.onrender.com](https://garagem-interativa-1.onrender.com).
 
 ---
 
@@ -52,7 +68,7 @@ O projeto é dividido em duas partes principais:
 
 ## 🔧 Como Rodar o Projeto Localmente
 
-Para ter a Garagem DreamHouse funcionando na sua máquina, siga estes passos:
+Para ter a Garagem Rosa funcionando na sua máquina, siga estes passos:
 
 ### **Pré-requisitos**
 *   [Node.js](https://nodejs.org/en/) instalado.
@@ -63,12 +79,12 @@ Para ter a Garagem DreamHouse funcionando na sua máquina, siga estes passos:
 
 1.  **Clone o repositório:**
     ```bash
-    git clone https://github.com/seu-usuario/nome-do-repositorio.git
+    git clone https://github.com/KamillaMariaR/Garagem_Rosa.git
     ```
 
 2.  **Navegue até a pasta do projeto:**
     ```bash
-    cd nome-do-repositorio
+    cd Garagem_Rosa
     ```
 
 3.  **Instale todas as dependências do servidor:**
@@ -97,7 +113,7 @@ Para ter a Garagem DreamHouse funcionando na sua máquina, siga estes passos:
     Se tudo estiver correto, você verá uma mensagem no terminal confirmando que o servidor está rodando na porta 3001.
 
 6.  **Acesse a aplicação:**
-    Abra seu navegador e acesse [http://garagem-interativa-1.onrender.com](http://garagem-interativa-1.onrender.com). Pronto! Agora é só se cadastrar e aproveitar a sua Garagem DreamHouse.
+    Abra seu navegador e acesse [http://localhost:3001](http://localhost:3001).
 
 ---
 
@@ -105,8 +121,6 @@ Para ter a Garagem DreamHouse funcionando na sua máquina, siga estes passos:
 
 Este projeto foi desenvolvido com muita dedicação. Sinta-se à vontade para explorar, contribuir e se divertir!
 
-**KamillaMariaR**
+**Kamilla Maria**
 
-[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/KamillaMariaR))
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/seu-usuario/)
-
+[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/KamillaMariaR)

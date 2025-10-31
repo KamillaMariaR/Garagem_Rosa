@@ -97,7 +97,7 @@ Para ter a Garagem DreamHouse funcionando na sua máquina, siga estes passos:
     Se tudo estiver correto, você verá uma mensagem no terminal confirmando que o servidor está rodando na porta 3001.
 
 6.  **Acesse a aplicação:**
-    Abra seu navegador e acesse [http://localhost:3001](http://localhost:3001). Pronto! Agora é só se cadastrar e aproveitar a sua Garagem DreamHouse.
+    Abra seu navegador e acesse [http://garagem-interativa-1.onrender.com](http://garagem-interativa-1.onrender.com). Pronto! Agora é só se cadastrar e aproveitar a sua Garagem DreamHouse.
 
 ---
 
@@ -105,7 +105,8 @@ Para ter a Garagem DreamHouse funcionando na sua máquina, siga estes passos:
 
 Este projeto foi desenvolvido com muita dedicação. Sinta-se à vontade para explorar, contribuir e se divertir!
 
-**[Seu Nome Aqui]**
+**KamillaMariaR**
 
-[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/seu-usuario)
+[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/KamillaMariaR))
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/seu-usuario/)
+
